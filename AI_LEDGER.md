@@ -124,4 +124,18 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   6. `SkeletonList` skeleton blocks pick the right border color for light/dark theme.
 - **Verified:** `flutter analyze` clean on shared + both apps; `flutter test` shared 12/12.
 - **NOT verified live:** still blocked on real Stream credentials (same as P08).
-- **Commit:** `feat(chat-list): StreamChannelListView + unread badge [AI]`
+- **Commit:** `49ab50e` — `feat(chat-list): StreamChannelListView + unread badge [AI]`
+
+### #11 — Flutter chat conversation screen
+- **Tool:** Claude Opus 4.7
+- **Intent:** P10 — `ConversationView` shared widget with `StreamMessageListView` (custom builder swapping system messages for a centred grey pill), `_QuickReplies`, `_ConvAppBar` with peer name and camera-icon stub, `StreamMessageInput`. Per-app `ConversationPage` wraps it in `StreamChatTheme` so own bubbles match the role's brand color. `sendSystemMessage({memberUid, trainerUid, text})` helper for approve/decline use cases.
+- **Prompt (≤2 lines):** "P10 — Flutter: Chat Conversation Screen. Build ConversationPage, _ConvAppBar, _QuickReplies, _SystemBubble + sendSystemMessage helper. Theme own-bubbles per role."
+- **Used:** yes
+- **Deviations:**
+  1. Conversation lives in shared (`widgets/conversation.dart`); per-app page is a 6-line `StreamChatTheme` wrapper supplying the brand color. Brief's bubble theming was inline; pulling it out keeps the heavy widget app-agnostic.
+  2. `messageBuilder` signature in v8.3 takes `StreamMessageWidget defaultMessageWidget` (not generic `Widget`).
+  3. `_SystemBubble` colors flip for light/dark theme (brief hardcoded light surface).
+  4. `sendSystemMessage` takes explicit `memberUid`/`trainerUid` params since the helper has no `BuildContext` to read auth from. Use cases that call it know the UIDs from the call request anyway.
+- **Verified:** `flutter analyze` clean shared + both apps; `flutter test` shared 12/12.
+- **NOT verified live:** real-time delivery / typing / read receipts blocked on real Stream creds (same as P08/P09).
+- **Commit:** `feat(chat-conv): StreamMessageListView + quick replies + system bubble [AI]`

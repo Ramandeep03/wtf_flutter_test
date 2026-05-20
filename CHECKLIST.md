@@ -107,4 +107,18 @@
 - [ ] **Runtime not verified**: real channel list + unread badge need real Stream creds. Same blocker as P08.
 - [x] `feat(chat-list): StreamChannelListView + unread badge [AI]`
 
-## P10–P17 — TBD (filled in as briefs arrive)
+## P10 — Flutter: Chat Conversation Screen
+- [x] `ConversationView` (shared) opens DK↔Aarav channel, calls `watch()`
+- [x] `StreamMessageListView` with custom `messageBuilder` that swaps system messages for `_SystemBubble`
+- [x] `_ConvAppBar` shows peer name + Online + camera-icon stub (wired in P13)
+- [x] `_QuickReplies` row with 3 ActionChips that `sendMessage` on tap
+- [x] `_SystemBubble` is centred grey pill (light + dark themed)
+- [x] `StreamMessageInput` underneath quick replies
+- [x] `sendSystemMessage({memberUid, trainerUid, text})` helper exported for approve/decline use cases
+- [x] Per-app `ConversationPage` wraps `ConversationView` in `StreamChatTheme` so own-message bubbles match the role's primary (guru blue / trainer red); other-message bubbles match the surface color of the active light/dark theme
+- [x] `flutter analyze` shared + both apps → No issues
+- [x] `flutter test` shared still 12/12
+- [ ] **Runtime not verified**: real Stream creds still needed (same blocker as P08/P09).
+- [x] `feat(chat-conv): StreamMessageListView + quick replies + system bubble [AI]`
+
+## P11–P17 — TBD (filled in as briefs arrive)

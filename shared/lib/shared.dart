@@ -18,6 +18,7 @@ export 'services/stream_chat_service.dart';
 
 // Widgets
 export 'widgets/chat_list.dart';
+export 'widgets/conversation.dart';
 export 'widgets/error_retry_widget.dart';
 export 'widgets/login_form.dart';
 export 'widgets/role_app_bar.dart';
