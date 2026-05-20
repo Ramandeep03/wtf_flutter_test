@@ -1,0 +1,33 @@
+# Node
+node_modules/
+npm-debug.log*
+.env
+backend/serviceAccountKey.json
+
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+**/ios/Pods/
+**/ios/.symlinks/
+**/android/.gradle/
+**/android/local.properties
+*.iml
+
+# Hive / local boxes
+*.hive
+*.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
