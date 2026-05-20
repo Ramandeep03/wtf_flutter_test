@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -19,14 +21,45 @@ class ConversationView extends StatefulWidget {
 
 class _ConversationViewState extends State<ConversationView> {
   Channel? _channel;
+  StreamSubscription<List<Message>>? _msgSub;
 
   @override
   void initState() {
     super.initState();
     final user = context.read<AuthCubit>().state.userOrNull;
     if (user == null) return;
-    _channel = StreamChatService.instance.channelWithPeer(user);
-    _channel?.watch();
+    final channel = StreamChatService.instance.channelWithPeer(user);
+    _channel = channel;
+    if (channel == null) return;
+    _initChannel(channel);
+  }
+
+  Future<void> _initChannel(Channel channel) async {
+    try {
+      await channel.watch();
+      await channel.markRead();
+      AppLogger.i(LogTag.chat,
+          'marked read channel=${channel.id} unread=${channel.state?.unreadCount}');
+    } catch (e) {
+      AppLogger.w(LogTag.chat, 'initial markRead failed: $e');
+    }
+
+    // While the conversation is open, every new message arriving in this
+    // channel should immediately be marked read too (otherwise an incoming
+    // ping while you're staring at the screen leaves a stale unread count).
+    _msgSub = channel.state?.messagesStream.listen((messages) async {
+      try {
+        await channel.markRead();
+      } catch (e) {
+        AppLogger.w(LogTag.chat, 'live markRead failed: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _msgSub?.cancel();
+    super.dispose();
   }
 
   @override

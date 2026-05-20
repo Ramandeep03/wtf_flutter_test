@@ -25,6 +25,12 @@ enum CallPhase {
 class CallState extends Equatable {
   final CallPhase phase;
   final List<HMSPeer> peers;
+
+  /// Video tracks keyed by peerId. Populated from the `track` parameter
+  /// in `onTrackUpdate` — we don't rely on `HMSPeer.videoTrack` because
+  /// it can lag behind the SDK's track-update events.
+  final Map<String, HMSVideoTrack> videoTracks;
+
   final bool isMuted;
   final bool isVideoOff;
   final DateTime? joinedAt;
@@ -33,6 +39,7 @@ class CallState extends Equatable {
   const CallState({
     this.phase = CallPhase.idle,
     this.peers = const [],
+    this.videoTracks = const {},
     this.isMuted = false,
     this.isVideoOff = false,
     this.joinedAt,
@@ -42,6 +49,7 @@ class CallState extends Equatable {
   CallState copyWith({
     CallPhase? phase,
     List<HMSPeer>? peers,
+    Map<String, HMSVideoTrack>? videoTracks,
     bool? isMuted,
     bool? isVideoOff,
     DateTime? joinedAt,
@@ -51,14 +59,30 @@ class CallState extends Equatable {
       CallState(
         phase: phase ?? this.phase,
         peers: peers ?? this.peers,
+        videoTracks: videoTracks ?? this.videoTracks,
         isMuted: isMuted ?? this.isMuted,
         isVideoOff: isVideoOff ?? this.isVideoOff,
         joinedAt: joinedAt ?? this.joinedAt,
         errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       );
 
+  /// Signature that changes when peer membership OR track state changes.
+  /// `HMSPeer.==` is peerId-only, so without this the bloc's distinct filter
+  /// drops emits where the only difference is "remote peer got a video track".
+  String get _tracksSignature => videoTracks.entries
+      .map((e) => '${e.key}|${e.value.trackId}:${e.value.isMute}')
+      .join(',');
+
   @override
-  List<Object?> get props => [phase, peers, isMuted, isVideoOff, joinedAt, errorMessage];
+  List<Object?> get props => [
+        phase,
+        peers.map((p) => p.peerId).join(','),
+        _tracksSignature,
+        isMuted,
+        isVideoOff,
+        joinedAt,
+        errorMessage,
+      ];
 }
 
 // ─── Events ───
@@ -74,15 +98,22 @@ class CallJoinRequested extends CallEvent {
   final String userId;
   final String userName;
   final String role; // 'member' | 'trainer'
+  final bool startWithMicOff;
+  final bool startWithCameraOff;
   const CallJoinRequested({
     required this.callRequestId,
     required this.roomId,
     required this.userId,
     required this.userName,
     required this.role,
+    this.startWithMicOff = false,
+    this.startWithCameraOff = false,
   });
   @override
-  List<Object?> get props => [callRequestId, roomId, userId, userName, role];
+  List<Object?> get props => [
+        callRequestId, roomId, userId, userName, role,
+        startWithMicOff, startWithCameraOff,
+      ];
 }
 
 class CallEndRequested  extends CallEvent { const CallEndRequested(); }
@@ -97,6 +128,16 @@ class CallHmsPeersUpdated extends CallEvent {
   const CallHmsPeersUpdated(this.peers);
   @override
   List<Object?> get props => [peers];
+}
+
+/// Video track set/unset for a peer. `track == null` means the peer's
+/// video was removed (or muted-and-removed).
+class CallHmsVideoTrack extends CallEvent {
+  final String peerId;
+  final HMSVideoTrack? track;
+  const CallHmsVideoTrack(this.peerId, this.track);
+  @override
+  List<Object?> get props => [peerId, track?.trackId];
 }
 class CallHmsReconnecting extends CallEvent { const CallHmsReconnecting(); }
 class CallHmsReconnected  extends CallEvent { const CallHmsReconnected(); }
@@ -115,10 +156,17 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   final HMSSDK Function() _sdkFactory;
   HMSSDK? _sdk;
 
+  /// Exposed so the `CallView` widget can attach its own
+  /// HMSUpdateListener on the same SDK instance for setState-based peer
+  /// / track rendering (mirrors the 100ms quickstart pattern).
+  HMSSDK? get sdk => _sdk;
+
   /// Captured from CallJoinRequested so _onEnd knows which request to
   /// mark as ended and whether this side is the trainer.
   String? _callRequestId;
   String? _role;
+  bool _pendingMicOff = false;
+  bool _pendingCameraOff = false;
 
   CallBloc({
     ApiClient? api,
@@ -141,12 +189,55 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
     });
     on<CallCameraFlipped>((_, __) async => _sdk?.switchCamera());
 
-    on<CallHmsConnected>((_, emit) => emit(state.copyWith(
-          phase: CallPhase.inCall,
-          joinedAt: state.joinedAt ?? DateTime.now(),
-          clearError: true,
-        )));
-    on<CallHmsPeersUpdated>((e, emit) => emit(state.copyWith(peers: e.peers)));
+    on<CallHmsConnected>((_, emit) async {
+      // Flip the state FIRST so PreJoinView swaps to CallView. Any failure
+      // applying the pre-join mic/cam preferences after this must not be
+      // allowed to swallow the inCall transition.
+      emit(state.copyWith(
+        phase: CallPhase.inCall,
+        joinedAt: state.joinedAt ?? DateTime.now(),
+        isMuted: _pendingMicOff,
+        isVideoOff: _pendingCameraOff,
+        clearError: true,
+      ));
+      AppLogger.i(LogTag.rtc,
+          'phase=inCall (pendingMicOff=$_pendingMicOff pendingCamOff=$_pendingCameraOff)');
+
+      // Apply pre-join preferences. Wrapped in try/catch so a flaky SDK
+      // toggle doesn't bubble up and kill the bloc.
+      try {
+        if (_pendingMicOff) {
+          await _sdk?.toggleMicMuteState();
+        }
+        if (_pendingCameraOff) {
+          await _sdk?.toggleCameraMuteState();
+        }
+      } catch (e) {
+        AppLogger.w(LogTag.rtc, 'failed to apply pre-join mic/cam: $e');
+      } finally {
+        _pendingMicOff = false;
+        _pendingCameraOff = false;
+      }
+    });
+    on<CallHmsPeersUpdated>((e, emit) {
+      // Drop video tracks for peers that left.
+      final live = e.peers.map((p) => p.peerId).toSet();
+      final pruned = {
+        for (final entry in state.videoTracks.entries)
+          if (live.contains(entry.key)) entry.key: entry.value,
+      };
+      emit(state.copyWith(peers: e.peers, videoTracks: pruned));
+    });
+
+    on<CallHmsVideoTrack>((e, emit) {
+      final next = Map<String, HMSVideoTrack>.from(state.videoTracks);
+      if (e.track == null) {
+        next.remove(e.peerId);
+      } else {
+        next[e.peerId] = e.track!;
+      }
+      emit(state.copyWith(videoTracks: next));
+    });
     on<CallHmsReconnecting>((_, emit) => emit(state.copyWith(phase: CallPhase.joining)));
     on<CallHmsReconnected>((_, emit) => emit(state.copyWith(phase: CallPhase.inCall)));
     on<CallHmsFailed>((e, emit) {
@@ -160,6 +251,8 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   Future<void> _onJoin(CallJoinRequested e, Emitter<CallState> emit) async {
     _callRequestId = e.callRequestId;
     _role = e.role;
+    _pendingMicOff = e.startWithMicOff;
+    _pendingCameraOff = e.startWithCameraOff;
     emit(state.copyWith(phase: CallPhase.joining, clearError: true));
     try {
       final data = await _api.get('/hms-token?roomId=${e.roomId}&role=${e.role}');
@@ -178,13 +271,36 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   }
 
   Future<void> _onEnd(CallEndRequested _, Emitter<CallState> emit) async {
-    await _sdk?.leave();
+    // Either side ending = "End for all". Both peers leave the room and
+    // the call request is marked endedAt so the Join Call button hides
+    // for both. The other peer receives onRemovedFromRoom which navigates
+    // them to /post-call automatically.
+    //
+    // endRoom requires `end_room` permission on the 100ms role. Trainer
+    // template usually grants it; member's template may not. If endRoom
+    // is denied, we fall back to leave() — the local user still exits,
+    // and the endedAt PATCH below still hides the Join Call button on
+    // both apps so the room is effectively dead.
+    try {
+      await _sdk?.endRoom(lock: false, reason: '$_role ended the call');
+    } catch (e) {
+      AppLogger.w(LogTag.rtc, 'endRoom failed, leaving instead: $e');
+      await _sdk?.leave();
+    }
+
+    // Release native HMS resources so the *next* HMSSDK() instance can
+    // initialise cleanly. Without destroy() the platform layer holds the
+    // previous session and subsequent joins silently fail until the app
+    // is fully relaunched.
+    _sdk?.destroy();
+    _sdk = null;
+
     emit(state.copyWith(phase: CallPhase.ended));
     AppLogger.i(LogTag.rtc, 'call ended (role=$_role)');
 
-    // Only the trainer pressing End Call closes the request for everyone.
-    // A guru leaving just drops them from the room; the trainer can stay.
-    if (_role == 'trainer' && _callRequestId != null) {
+    // Close the call request — Join Call button disappears on both apps
+    // because canJoinCall checks !r.isEnded.
+    if (_callRequestId != null) {
       final res = await _callRequests.end(_callRequestId!);
       res.fold(
         (f) => AppLogger.w(LogTag.schedule,
@@ -255,12 +371,28 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
     required HMSTrackUpdate trackUpdate,
     required HMSPeer peer,
   }) {
-    // Track changes can affect mute / video-off rendering; rebuild peer
-    // list so the UI re-evaluates videoTrack/audioTrack.
+    AppLogger.t(
+      LogTag.rtc,
+      'track ${trackUpdate.name} kind=${track.kind} peer=${peer.peerId}',
+    );
+
+    // Make sure the peer is in our peers list — sometimes track events
+    // race ahead of peerJoined.
     final list = List<HMSPeer>.from(state.peers);
-    final i = list.indexWhere((p) => p.peerId == peer.peerId);
-    if (i >= 0) list[i] = peer;
-    add(CallHmsPeersUpdated(list));
+    if (list.indexWhere((p) => p.peerId == peer.peerId) < 0) {
+      list.add(peer);
+      add(CallHmsPeersUpdated(list));
+    }
+
+    // Mirror the quickstart: capture the video track passed to this
+    // callback directly (don't rely on peer.videoTrack which can be stale).
+    if (track.kind == HMSTrackKind.kHMSTrackKindVideo) {
+      if (trackUpdate == HMSTrackUpdate.trackRemoved) {
+        add(CallHmsVideoTrack(peer.peerId, null));
+      } else {
+        add(CallHmsVideoTrack(peer.peerId, track as HMSVideoTrack));
+      }
+    }
   }
   @override
   void onMessage({required HMSMessage message}) {}
@@ -289,6 +421,8 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   @override
   Future<void> close() async {
     await _sdk?.leave();
+    _sdk?.destroy();
+    _sdk = null;
     return super.close();
   }
 }

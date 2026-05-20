@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:api_state/api_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -102,7 +104,7 @@ class _ChatListViewState extends State<ChatListView> {
   }
 }
 
-class _ChannelTile extends StatelessWidget {
+class _ChannelTile extends StatefulWidget {
   final Channel channel;
   final Color primaryColor;
   final VoidCallback onTap;
@@ -113,9 +115,55 @@ class _ChannelTile extends StatelessWidget {
     required this.onTap,
   });
 
+  @override
+  State<_ChannelTile> createState() => _ChannelTileState();
+}
+
+class _ChannelTileState extends State<_ChannelTile> {
+  // Subscribe to the channel's in-place state changes — Stream mutates
+  // ChannelState in-place on every event, so the parent list controller
+  // never tells us to rebuild. We listen to messages + unread streams
+  // directly and setState to redraw this tile when either changes.
+  StreamSubscription<List<Message>>? _msgSub;
+  StreamSubscription<int>? _unreadSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribe();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ChannelTile old) {
+    super.didUpdateWidget(old);
+    if (old.channel.cid != widget.channel.cid) {
+      _msgSub?.cancel();
+      _unreadSub?.cancel();
+      _subscribe();
+    }
+  }
+
+  void _subscribe() {
+    final state = widget.channel.state;
+    if (state == null) return;
+    _msgSub = state.messagesStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _unreadSub = state.unreadCountStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _msgSub?.cancel();
+    _unreadSub?.cancel();
+    super.dispose();
+  }
+
   String _peerName() {
     final myUid = StreamChatService.instance.client.state.currentUser?.id;
-    final members = channel.state?.members ?? const [];
+    final members = widget.channel.state?.members ?? const [];
     if (members.isEmpty) return 'User';
     final peer = members.firstWhere(
       (m) => m.userId != myUid,
@@ -126,6 +174,9 @@ class _ChannelTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final channel = widget.channel;
+    final primaryColor = widget.primaryColor;
+    final onTap = widget.onTap;
     final unread  = channel.state?.unreadCount ?? 0;
     final lastMsg = channel.state?.messages.lastOrNull;
     final name = _peerName();

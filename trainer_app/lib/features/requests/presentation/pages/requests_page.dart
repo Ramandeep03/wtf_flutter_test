@@ -43,30 +43,27 @@ class _RequestsView extends StatelessWidget {
           listener: (ctx, state) {
             SnackbarHelper.showError(ctx, state.lastError!);
           },
-          builder: (ctx, state) {
-            return switch (state.list) {
-              ApiInitial() || ApiLoading() => const SkeletonList(itemCount: 4),
-              ApiFailure(:final error) => ErrorRetryWidget(
-                  message: error.message,
-                  onRetry: () => ctx.read<RequestsBloc>().add(const RequestsLoaded()),
+          builder: (ctx, state) => state.list.when(
+            initialOrLoading: () => const SkeletonList(itemCount: 4),
+            failure: (error) => ErrorRetryWidget(
+              message: error.message,
+              onRetry: () => ctx.read<RequestsBloc>().add(const RequestsLoaded()),
+            ),
+            success: (list) => TabBarView(
+              children: [
+                _RequestList(
+                  requests: list.where((r) => r.isPending).toList(),
+                  processingIds: state.processingIds,
+                  emptyText: 'No pending requests.',
                 ),
-              ApiSuccess(data: final list) => TabBarView(
-                  children: [
-                    _RequestList(
-                      requests: list.where((r) => r.isPending).toList(),
-                      processingIds: state.processingIds,
-                      emptyText: 'No pending requests.',
-                    ),
-                    _RequestList(
-                      requests: list,
-                      processingIds: state.processingIds,
-                      emptyText: 'No requests yet.',
-                    ),
-                  ],
+                _RequestList(
+                  requests: list,
+                  processingIds: state.processingIds,
+                  emptyText: 'No requests yet.',
                 ),
-              _ => const SizedBox.shrink(),
-            };
-          },
+              ],
+            ),
+          ),
         ),
       ),
     );

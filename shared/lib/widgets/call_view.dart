@@ -1,121 +1,307 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hmssdk_flutter/hmssdk_flutter.dart';
 
 import '../blocs/call_bloc.dart';
+import '../utils/app_logger.dart';
 import '../utils/app_theme.dart';
 import '../utils/extensions.dart';
 
-class CallView extends StatelessWidget {
+/// Mirrors the 100ms Flutter quickstart pattern: this widget owns its own
+/// HMSUpdateListener subscription on top of the SDK already created by
+/// `CallBloc`, tracks local + remote peer + tracks via setState, and
+/// renders them with `HMSVideoView`.
+///
+/// Two listeners on the same SDK is fine — `addUpdateListener` accumulates,
+/// each gets the callbacks. CallBloc still handles phase transitions
+/// (joining → inCall → ended/failed) so PreJoinView knows when to swap us
+/// in; this widget handles only the actual peer/track UI.
+class CallView extends StatefulWidget {
   const CallView({super.key});
 
   @override
+  State<CallView> createState() => _CallViewState();
+}
+
+class _CallViewState extends State<CallView> implements HMSUpdateListener {
+  HMSSDK? _sdk;
+
+  HMSPeer? localPeer;
+  HMSPeer? remotePeer;
+  HMSVideoTrack? localPeerVideoTrack;
+  HMSVideoTrack? remotePeerVideoTrack;
+
+  @override
+  void initState() {
+    super.initState();
+    final bloc = context.read<CallBloc>();
+    final sdk = bloc.sdk;
+    _sdk = sdk;
+    if (sdk == null) return;
+    sdk.addUpdateListener(listener: this);
+    // Backfill in case onJoin / onPeerUpdate already fired before we mounted.
+    _backfillFromSdk(sdk);
+  }
+
+  Future<void> _backfillFromSdk(HMSSDK sdk) async {
+    final local = await sdk.getLocalPeer();
+    final remotes = await sdk.getRemotePeers();
+    if (!mounted) return;
+    setState(() {
+      if (local != null) {
+        localPeer = local;
+        localPeerVideoTrack = local.videoTrack;
+      }
+      if (remotes != null && remotes.isNotEmpty) {
+        remotePeer = remotes.first;
+        remotePeerVideoTrack = remotes.first.videoTrack;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sdk?.removeUpdateListener(listener: this);
+    super.dispose();
+  }
+
+  // ─── HMSUpdateListener ───
+  @override
+  void onJoin({required HMSRoom room}) {
+    AppLogger.t(LogTag.rtc, 'CallView.onJoin room=${room.id} peers=${room.peers?.length}');
+    room.peers?.forEach((peer) {
+      if (peer.isLocal) {
+        if (!mounted) return;
+        setState(() {
+          localPeer = peer;
+          if (peer.videoTrack != null) localPeerVideoTrack = peer.videoTrack;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          remotePeer = peer;
+          if (peer.videoTrack != null) remotePeerVideoTrack = peer.videoTrack;
+        });
+      }
+    });
+  }
+
+  @override
+  void onPeerUpdate({required HMSPeer peer, required HMSPeerUpdate update}) {
+    AppLogger.t(LogTag.rtc,
+        'CallView.onPeerUpdate ${update.name} peer=${peer.peerId} local=${peer.isLocal}');
+    switch (update) {
+      case HMSPeerUpdate.peerJoined:
+        if (!peer.isLocal && mounted) {
+          setState(() => remotePeer = peer);
+        }
+        break;
+      case HMSPeerUpdate.peerLeft:
+        if (!peer.isLocal && mounted) {
+          setState(() {
+            remotePeer = null;
+            remotePeerVideoTrack = null;
+          });
+        }
+        break;
+      case HMSPeerUpdate.networkQualityUpdated:
+        return;
+      default:
+        // No-op for other peer updates.
+        break;
+    }
+  }
+
+  @override
+  void onTrackUpdate({
+    required HMSTrack track,
+    required HMSTrackUpdate trackUpdate,
+    required HMSPeer peer,
+  }) {
+    AppLogger.t(LogTag.rtc,
+        'CallView.onTrackUpdate ${trackUpdate.name} kind=${track.kind} peer=${peer.peerId}');
+    if (track.kind != HMSTrackKind.kHMSTrackKindVideo) return;
+    switch (trackUpdate) {
+      case HMSTrackUpdate.trackRemoved:
+        if (!mounted) return;
+        setState(() {
+          if (peer.isLocal) {
+            localPeerVideoTrack = null;
+          } else {
+            remotePeerVideoTrack = null;
+          }
+        });
+        return;
+      default:
+        if (!mounted) return;
+        setState(() {
+          if (peer.isLocal) {
+            localPeerVideoTrack = track as HMSVideoTrack;
+          } else {
+            remotePeer ??= peer;
+            remotePeerVideoTrack = track as HMSVideoTrack;
+          }
+        });
+    }
+  }
+
+  // Other required HMSUpdateListener methods — no-ops, CallBloc handles them.
+  @override
+  void onHMSError({required HMSException error}) {}
+  @override
+  void onMessage({required HMSMessage message}) {}
+  @override
+  void onReconnecting() {}
+  @override
+  void onReconnected() {}
+  @override
+  void onRoomUpdate({required HMSRoom room, required HMSRoomUpdate update}) {}
+  @override
+  void onUpdateSpeakers({required List<HMSSpeaker> updateSpeakers}) {}
+  @override
+  void onRoleChangeRequest({required HMSRoleChangeRequest roleChangeRequest}) {}
+  @override
+  void onChangeTrackStateRequest({required HMSTrackChangeRequest hmsTrackChangeRequest}) {}
+  @override
+  void onRemovedFromRoom({required HMSPeerRemovedFromPeer hmsPeerRemovedFromPeer}) {}
+  @override
+  void onAudioDeviceChanged({
+    HMSAudioDevice? currentAudioDevice,
+    List<HMSAudioDevice>? availableAudioDevice,
+  }) {}
+  @override
+  void onSessionStoreAvailable({HMSSessionStore? hmsSessionStore}) {}
+  @override
+  void onPeerListUpdate({
+    required List<HMSPeer> addedPeers,
+    required List<HMSPeer> removedPeers,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      for (final p in addedPeers) {
+        if (p.isLocal) {
+          localPeer = p;
+          if (p.videoTrack != null) localPeerVideoTrack = p.videoTrack;
+        } else {
+          remotePeer = p;
+          if (p.videoTrack != null) remotePeerVideoTrack = p.videoTrack;
+        }
+      }
+      for (final p in removedPeers) {
+        if (!p.isLocal && p.peerId == remotePeer?.peerId) {
+          remotePeer = null;
+          remotePeerVideoTrack = null;
+        }
+      }
+    });
+  }
+
+  // ─── UI ───
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<CallBloc, CallState>(
-      builder: (ctx, state) {
-        final local  = state.peers.firstWhereOrNull((p) => p.isLocal);
-        final remote = state.peers.firstWhereOrNull((p) => !p.isLocal);
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              // Remote — full screen
-              _RemoteView(remote: remote),
+      builder: (ctx, state) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // Remote — full screen
+            Positioned.fill(child: _peerTile(remotePeerVideoTrack, remotePeer, isLocal: false)),
 
-              // Local — PiP
-              Positioned(
-                right: 12,
-                bottom: 96,
-                child: SizedBox(
-                  width: 100,
-                  height: 140,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: state.isVideoOff || local?.videoTrack == null
-                        ? Container(
-                            color: Colors.grey[800],
-                            child: const Icon(Icons.person, color: Colors.white, size: 40),
-                          )
-                        : HMSTextureView(track: local!.videoTrack!, setMirror: true),
-                  ),
+            // Local — PiP
+            Positioned(
+              right: 12,
+              bottom: 96,
+              child: SizedBox(
+                width: 100,
+                height: 140,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _peerTile(localPeerVideoTrack, localPeer, isLocal: true),
                 ),
               ),
+            ),
 
-              // Name + timer
-              Positioned(
-                top: 52,
-                left: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (remote != null)
-                      Text(
-                        remote.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+            // Name + timer
+            Positioned(
+              top: 52,
+              left: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (remotePeer != null)
+                    Text(
+                      remotePeer!.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    _DurationTimer(joinedAt: state.joinedAt),
-                  ],
-                ),
-              ),
-
-              // Reconnecting overlay
-              if (state.phase == CallPhase.joining && state.joinedAt != null)
-                Container(
-                  color: Colors.black54,
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: Colors.white),
-                        SizedBox(height: 16),
-                        Text(
-                          'Reconnecting…',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ],
                     ),
+                  _DurationTimer(joinedAt: state.joinedAt),
+                ],
+              ),
+            ),
+
+            // Reconnecting overlay
+            if (state.phase == CallPhase.joining && state.joinedAt != null)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 16),
+                      Text('Reconnecting…',
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ],
                   ),
                 ),
-
-              // Controls
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _CallControls(state: state),
               ),
-            ],
-          ),
-        );
-      },
+
+            // Controls
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _CallControls(state: state),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-}
-
-class _RemoteView extends StatelessWidget {
-  final HMSPeer? remote;
-  const _RemoteView({required this.remote});
-
-  @override
-  Widget build(BuildContext context) {
-    final track = remote?.videoTrack;
-    if (track == null) {
-      return const Center(
-        child: Text(
-          'Waiting for other participant…',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
+  Widget _peerTile(HMSVideoTrack? videoTrack, HMSPeer? peer, {required bool isLocal}) {
+    if (videoTrack != null && !videoTrack.isMute) {
+      return HMSVideoView(
+        key: ValueKey('${isLocal ? 'local' : 'remote'}-${videoTrack.trackId}'),
+        track: videoTrack,
+        setMirror: isLocal,
       );
     }
-    return HMSTextureView(track: track);
+    final initial = (peer?.name.isNotEmpty ?? false)
+        ? peer!.name.substring(0, 1).toUpperCase()
+        : '?';
+    return Container(
+      color: Colors.grey[850],
+      child: Center(
+        child: CircleAvatar(
+          radius: 28,
+          backgroundColor: AppColors.guruPrimary.withValues(alpha: 0.2),
+          child: Text(
+            initial,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

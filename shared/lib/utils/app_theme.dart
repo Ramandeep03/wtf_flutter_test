@@ -43,49 +43,81 @@ class AppSpacing {
 /// Pass `AppColors.guruPrimary` from guru_app and `AppColors.trainerPrimary`
 /// from trainer_app, then wire into `MaterialApp(theme:, darkTheme:, themeMode: ThemeMode.system)`.
 class AppTheme {
-  static ThemeData light(Color seed) => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.light,
-          error: AppColors.error,
-        ),
-        scaffoldBackgroundColor: AppColors.bgLight,
-        cardColor: AppColors.bgSurface,
-        dividerColor: AppColors.borderLight,
-        textTheme: const TextTheme(
-          headlineLarge: AppTypography.h1,
-          headlineMedium: AppTypography.h2,
-          bodyLarge: AppTypography.body,
-          bodyMedium: AppTypography.bodySmall,
-          labelSmall: AppTypography.label,
-        ).apply(
-          bodyColor: AppColors.textPrimary,
-          displayColor: AppColors.textPrimary,
-        ),
-      );
+  static ThemeData light(Color seed) {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: Brightness.light,
+      error: AppColors.error,
+    );
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: AppColors.bgLight,
+      cardColor: AppColors.bgSurface,
+      dividerColor: AppColors.borderLight,
+      textTheme: const TextTheme(
+        headlineLarge: AppTypography.h1,
+        headlineMedium: AppTypography.h2,
+        bodyLarge: AppTypography.body,
+        bodyMedium: AppTypography.bodySmall,
+        labelSmall: AppTypography.label,
+      ).apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
+      chipTheme: _chipTheme(scheme, AppColors.textPrimary, AppColors.borderLight),
+    );
+  }
 
-  static ThemeData dark(Color seed) => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seed,
-          brightness: Brightness.dark,
-          error: AppColors.error,
-        ),
-        scaffoldBackgroundColor: AppColors.bgDark,
-        cardColor: AppColors.bgSurfaceDark,
-        dividerColor: AppColors.borderDark,
-        textTheme: const TextTheme(
-          headlineLarge: AppTypography.h1,
-          headlineMedium: AppTypography.h2,
-          bodyLarge: AppTypography.body,
-          bodyMedium: AppTypography.bodySmall,
-          labelSmall: AppTypography.label,
-        ).apply(
-          bodyColor: AppColors.textPrimaryDark,
-          displayColor: AppColors.textPrimaryDark,
-        ),
-      );
+  static ThemeData dark(Color seed) {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: Brightness.dark,
+      error: AppColors.error,
+    );
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: AppColors.bgDark,
+      cardColor: AppColors.bgSurfaceDark,
+      dividerColor: AppColors.borderDark,
+      textTheme: const TextTheme(
+        headlineLarge: AppTypography.h1,
+        headlineMedium: AppTypography.h2,
+        bodyLarge: AppTypography.body,
+        bodyMedium: AppTypography.bodySmall,
+        labelSmall: AppTypography.label,
+      ).apply(
+        bodyColor: AppColors.textPrimaryDark,
+        displayColor: AppColors.textPrimaryDark,
+      ),
+      chipTheme: _chipTheme(scheme, AppColors.textPrimaryDark, AppColors.borderDark),
+    );
+  }
+
+  /// Single source of truth for chip styling so ChoiceChips render
+  /// identically across both themes and modes. Selected = filled primary
+  /// with `onPrimary` text; unselected = transparent + outlined.
+  static ChipThemeData _chipTheme(ColorScheme scheme, Color restingText, Color restingBorder) {
+    return ChipThemeData(
+      backgroundColor: Colors.transparent,
+      selectedColor: scheme.primary,
+      disabledColor: restingBorder.withValues(alpha: 0.4),
+      showCheckmark: false,
+      side: BorderSide(color: restingBorder, width: 1),
+      shape: const StadiumBorder(),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm + 2,
+        vertical: 2,
+      ),
+      // Label colors must be resolved per-state — Material picks
+      // `secondaryLabelStyle` for the selected variant. Selected text
+      // uses onPrimary (white in both themes against the brand seed),
+      // unselected uses the resting text colour for the active theme.
+      labelStyle: AppTypography.label.copyWith(color: restingText),
+      secondaryLabelStyle: AppTypography.label.copyWith(color: scheme.onPrimary),
+    );
+  }
 }

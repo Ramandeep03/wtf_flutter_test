@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: wtf-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true          # redeploy on every push to main
+
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 3000
+
+      # Set these in the Render dashboard (sync: false → prompted on first deploy).
+      # Don't put real values here — this file is checked into git.
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: HMS_APP_ACCESS_KEY
+        sync: false
+      - key: HMS_APP_SECRET
+        sync: false
+      - key: HMS_TEMPLATE_ID
+        sync: false
+      - key: STREAM_API_KEY
+        sync: false
+      - key: STREAM_API_SECRET
+        sync: false
+
+      # Service account: two equivalent options, pick one.
+      #
+      # Option A (recommended) — base64 of serviceAccountKey.json contents.
+      # backend/src/config/firebase.js already supports this:
+      #   FIREBASE_SERVICE_ACCOUNT_B64=<base64 -w0 serviceAccountKey.json>
+      - key: FIREBASE_SERVICE_ACCOUNT_B64
+        sync: false
+      #
+      # Option B — upload the JSON file via Render dashboard → Environment →
+      # Secret Files. Use filename `serviceAccountKey.json`; Render mounts it
+      # at /opt/render/project/src/backend/serviceAccountKey.json, which is
+      # where `./serviceAccountKey.json` resolves at runtime.

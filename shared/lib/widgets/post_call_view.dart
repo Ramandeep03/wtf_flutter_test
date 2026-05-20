@@ -4,10 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../blocs/auth_cubit.dart';
 import '../blocs/post_call_cubit.dart';
+import '../models/session_log_draft.dart';
+import '../services/session_log_repository.dart';
 import '../utils/app_theme.dart';
 import '../utils/extensions.dart';
 import '../utils/snackbar_helper.dart';
 
+/// Renders post-call as a bottom-sheet body (no outer Scaffold), so it
+/// can be presented via [showPostCallSheet] *or* embedded in the existing
+/// `/post-call` route page.
 class PostCallView extends StatelessWidget {
   const PostCallView({super.key});
 
@@ -21,27 +26,94 @@ class PostCallView extends StatelessWidget {
         switch (state.phase) {
           case PostCallPhase.saved:
             SnackbarHelper.showSuccess(ctx, 'Session saved to your logs.');
-            ctx.push('/sessions');
+            // Pops the bottom sheet (or the /post-call route page if used as one).
+            ctx.pop();
           case PostCallPhase.failed:
             SnackbarHelper.showError(
                 ctx, state.error ?? 'Could not save session');
           case _:
         }
       },
-      builder: (ctx, state) => Scaffold(
-        body: SafeArea(
+      builder: (ctx, state) {
+        // Bottom-sheet content lifts above the keyboard; SafeArea handles
+        // the home indicator on iOS.
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return SafeArea(
+          top: false,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: switch (state.phase) {
-              PostCallPhase.creating =>
-                const Center(child: CircularProgressIndicator()),
-              _ => isMember ? const _MemberSheet() : const _TrainerSheet(),
-            },
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg + bottomInset,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _SheetHandle(),
+                const SizedBox(height: AppSpacing.md),
+                switch (state.phase) {
+                  PostCallPhase.creating => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  _ => isMember ? const _MemberSheet() : const _TrainerSheet(),
+                },
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+/// Presents [PostCallView] as a modal bottom sheet. Returns when the
+/// sheet is dismissed (save completed or user dragged it away).
+Future<void> showPostCallSheet(BuildContext context, SessionLogDraft draft) {
+  if (draft.memberId == null || draft.trainerId == null) {
+    SnackbarHelper.showError(
+      context,
+      'Session log requires memberId + trainerId.',
+    );
+    return Future.value();
+  }
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true, // lets the sheet expand for the keyboard
+    enableDrag: true,
+    isDismissible: true,
+    showDragHandle: false, // we render our own handle inside
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (sheetCtx) => BlocProvider(
+      create: (_) => PostCallCubit(
+        repo: SessionLogRepository(),
+        draft: draft,
+        memberId: draft.memberId!,
+        trainerId: draft.trainerId!,
+      ),
+      child: const PostCallView(),
+    ),
+  );
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(context).dividerColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      );
 }
 
 class _MemberSheet extends StatelessWidget {
@@ -54,6 +126,7 @@ class _MemberSheet extends StatelessWidget {
         final cubit = ctx.read<PostCallCubit>();
         final saving = state.phase == PostCallPhase.saving;
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('How was your session?', style: AppTypography.h2),
@@ -68,7 +141,7 @@ class _MemberSheet extends StatelessWidget {
               maxLines: 3,
               onChanged: cubit.setMemberNote,
             ),
-            const Spacer(),
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -83,7 +156,7 @@ class _MemberSheet extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () => context.push('/sessions'),
+              onPressed: () => context.pop(),
               child: const Text('Skip'),
             ),
           ],
@@ -103,6 +176,7 @@ class _TrainerSheet extends StatelessWidget {
         final cubit = ctx.read<PostCallCubit>();
         final saving = state.phase == PostCallPhase.saving;
         return Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Session complete', style: AppTypography.h2),
@@ -122,7 +196,7 @@ class _TrainerSheet extends StatelessWidget {
               maxLines: 4,
               onChanged: cubit.setTrainerNote,
             ),
-            const Spacer(),
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

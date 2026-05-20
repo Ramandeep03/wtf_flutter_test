@@ -27,8 +27,10 @@ class SessionLogEntity extends Equatable {
         id: j['id'] as String,
         memberId: j['memberId'] as String,
         trainerId: j['trainerId'] as String,
-        startedAt: DateTime.parse(j['startedAt'] as String),
-        endedAt: DateTime.parse(j['endedAt'] as String),
+        // Backend stores ISO-UTC; convert to local so timestamps render
+        // in the user's timezone (see CallRequestEntity for the same fix).
+        startedAt: DateTime.parse(j['startedAt'] as String).toLocal(),
+        endedAt: DateTime.parse(j['endedAt'] as String).toLocal(),
         durationSec: j['durationSec'] as int,
         rating: j['rating'] as int?,
         memberNotes: j['memberNotes'] as String?,

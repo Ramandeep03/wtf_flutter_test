@@ -32,9 +32,13 @@ class CallRequestEntity extends Equatable {
         note: (j['note'] ?? '') as String,
         status: j['status'] as String,
         declineReason: j['declineReason'] as String?,
-        requestedAt: DateTime.parse(j['requestedAt'] as String),
-        scheduledFor: DateTime.parse(j['scheduledFor'] as String),
-        endedAt: j['endedAt'] != null ? DateTime.parse(j['endedAt'] as String) : null,
+        // Backend stores ISO-UTC; convert to local so .hour/.minute and
+        // extensions like toSlotLabel/toDateLabel render in the user's tz.
+        requestedAt: DateTime.parse(j['requestedAt'] as String).toLocal(),
+        scheduledFor: DateTime.parse(j['scheduledFor'] as String).toLocal(),
+        endedAt: j['endedAt'] != null
+            ? DateTime.parse(j['endedAt'] as String).toLocal()
+            : null,
       );
 
   bool get isPending   => status == 'pending';

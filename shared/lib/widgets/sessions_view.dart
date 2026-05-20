@@ -1,4 +1,3 @@
-import 'package:api_state/api_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -34,14 +33,15 @@ class SessionsView extends StatelessWidget {
   }
 
   Widget _body(BuildContext ctx, SessionLogsState state) {
-    return switch (state.listStatus) {
-      ApiInitial() || ApiLoading() => const SkeletonList(itemCount: 4),
-      ApiFailure(:final error) => ErrorRetryWidget(
-          message: error.message,
-          onRetry: () => ctx.read<SessionLogsCubit>().load(),
-        ),
-      ApiSuccess() when state.displayed.isEmpty => const _EmptyState(),
-      ApiSuccess() => RefreshIndicator(
+    return state.listStatus.when(
+      initialOrLoading: () => const SkeletonList(itemCount: 4),
+      failure: (error) => ErrorRetryWidget(
+        message: error.message,
+        onRetry: () => ctx.read<SessionLogsCubit>().load(),
+      ),
+      success: (_) {
+        if (state.displayed.isEmpty) return const _EmptyState();
+        return RefreshIndicator(
           onRefresh: () => ctx.read<SessionLogsCubit>().load(),
           child: ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -49,9 +49,9 @@ class SessionsView extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (_, i) => _SessionLogTile(log: state.displayed[i]),
           ),
-        ),
-      _ => const SizedBox.shrink(),
-    };
+        );
+      },
+    );
   }
 }
 
@@ -67,21 +67,31 @@ class _FilterChips extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(
-          children: _items
-              .map((it) => Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: ChoiceChip(
-                      label: Text(it.$2),
-                      selected: active == it.$1,
-                      onSelected: (_) => onChange(it.$1),
-                    ),
-                  ))
-              .toList(),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    // All styling (transparent bg, primary selected, label colors per state,
+    // stadium shape, no checkmark) lives in ChipThemeData inside AppTheme.
+    // We only override the border to match the fill when selected.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: _items
+            .map((it) => Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  child: ChoiceChip(
+                    label: Text(it.$2),
+                    selected: active == it.$1,
+                    onSelected: (_) => onChange(it.$1),
+                    side: active == it.$1 ? BorderSide(color: primary) : null,
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
 }
 
 class _EmptyState extends StatelessWidget {
@@ -126,7 +136,10 @@ class _SessionLogTile extends StatelessWidget {
     return Card(
       child: ListTile(
         onTap: () => _openDetail(context, log),
-        title: Text(log.startedAt.toDateLabel(), style: AppTypography.body),
+        title: Text(
+          '${log.startedAt.toDateLabel()} · ${log.startedAt.toSlotLabel()}',
+          style: AppTypography.body,
+        ),
         subtitle: Text(
           'Duration: ${log.durationSec.toMMSS()}',
           style:
@@ -227,9 +240,20 @@ class _DetailContentState extends State<_DetailContent> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Session — ${log.startedAt.toDateLabel()}',
-                  style: AppTypography.h2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Session — ${log.startedAt.toDateLabel()}',
+                      style: AppTypography.h2,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${log.startedAt.toSlotLabel()} → ${log.endedAt.toSlotLabel()}',
+                      style: AppTypography.bodySmall
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
               Text(

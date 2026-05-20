@@ -9,6 +9,7 @@ import '../blocs/pre_join_cubit.dart';
 import '../models/session_log_draft.dart';
 import '../utils/app_theme.dart';
 import '../utils/snackbar_helper.dart';
+import 'post_call_view.dart';
 import 'call_view.dart';
 
 /// Pre-join + in-call swap-on-phase. Keeping both views inside the same
@@ -28,7 +29,7 @@ class PreJoinView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<CallBloc, CallState>(
-      listener: (ctx, callState) {
+      listener: (ctx, callState) async {
         switch (callState.phase) {
           case CallPhase.failed when callState.joinedAt == null:
             if (callState.errorMessage != null) {
@@ -43,7 +44,11 @@ class PreJoinView extends StatelessWidget {
                 memberId: memberId,
                 trainerId: trainerId,
               );
-              ctx.pushReplacement('/post-call', extra: draft);
+              // Open post-call as a bottom sheet instead of a route push so
+              // the user can dismiss it back to the previous screen. We then
+              // pop the /pre-join route ourselves so the user returns to home.
+              await showPostCallSheet(ctx, draft);
+              if (ctx.mounted) ctx.pop();
             }
           case _:
         }
@@ -84,22 +89,21 @@ class _PreJoinScaffold extends StatelessWidget {
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     children: [
-                      switch (s.loadStatus) {
-                        ApiInitial() || ApiLoading() => const Text(
-                            'Loading room…',
-                            style: AppTypography.bodySmall,
-                          ),
-                        ApiFailure(:final error) => Text(
-                            error.message,
-                            style: const TextStyle(color: AppColors.error),
-                          ),
-                        ApiSuccess() => const Text(
-                            'Ready to join? Check mic and camera.',
-                            style: AppTypography.body,
-                            textAlign: TextAlign.center,
-                          ),
-                        _ => const SizedBox.shrink(),
-                      },
+                      s.loadStatus.when(
+                        initialOrLoading: () => const Text(
+                          'Loading room…',
+                          style: AppTypography.bodySmall,
+                        ),
+                        failure: (error) => Text(
+                          error.message,
+                          style: const TextStyle(color: AppColors.error),
+                        ),
+                        success: (_) => const Text(
+                          'Ready to join? Check mic and camera.',
+                          style: AppTypography.body,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -138,6 +142,8 @@ class _PreJoinScaffold extends StatelessWidget {
                                         userId: user!.uid,
                                         userName: user.name,
                                         role: role,
+                                        startWithMicOff: !s.isMicOn,
+                                        startWithCameraOff: !s.isCameraOn,
                                       ));
                                 }
                               : null,

@@ -30,24 +30,26 @@ class _MyRequestsView extends StatelessWidget {
       body: RefreshIndicator(
         onRefresh: () => context.read<MyRequestsCubit>().load(),
         child: BlocBuilder<MyRequestsCubit, ApiStatus<List<CallRequestEntity>>>(
-          builder: (ctx, state) {
-            return switch (state) {
-              ApiInitial() || ApiLoading() => const SkeletonList(itemCount: 4),
-              ApiFailure(:final error) => ErrorRetryWidget(
-                  message: error.message,
-                  onRetry: () => ctx.read<MyRequestsCubit>().load(),
-                ),
-              ApiSuccess(data: final list) when list.isEmpty =>
-                const Center(child: Text('No requests yet.', style: AppTypography.body)),
-              ApiSuccess(data: final list) => ListView.separated(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (_, i) => _RequestTile(request: list[i]),
-                ),
-              _ => const SizedBox.shrink(),
-            };
-          },
+          builder: (ctx, state) => state.when(
+            initialOrLoading: () => const SkeletonList(itemCount: 4),
+            failure: (error) => ErrorRetryWidget(
+              message: error.message,
+              onRetry: () => ctx.read<MyRequestsCubit>().load(),
+            ),
+            success: (list) {
+              if (list.isEmpty) {
+                return const Center(
+                  child: Text('No requests yet.', style: AppTypography.body),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (_, i) => _RequestTile(request: list[i]),
+              );
+            },
+          ),
         ),
       ),
     );
