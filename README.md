@@ -126,6 +126,30 @@ Cmd+Shift+P → **Tasks: Run Task**:
         "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
         "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
       ]
+    },
+        {
+      "name": "Guru App (Release)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/guru_app",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "toolArgs": [
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ]
+    },
+    {
+      "name": "Trainer App (Release)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/trainer_app",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "toolArgs": [
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ]
     }
   ],
   "compounds": [
