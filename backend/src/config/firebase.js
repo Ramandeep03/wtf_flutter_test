@@ -1,19 +1,11 @@
-// P02 will load the service account and call admin.initializeApp().
-// Stub kept so index.js requires resolve cleanly.
-
 const admin = require('firebase-admin');
+const serviceAccount = require('../../serviceAccountKey.json');
 
-let initialized = false;
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
-function init() {
-  if (initialized) return admin;
-  // const serviceAccount = require(path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_KEY));
-  // admin.initializeApp({
-  //   credential: admin.credential.cert(serviceAccount),
-  //   projectId: process.env.FIREBASE_PROJECT_ID,
-  // });
-  initialized = true;
-  return admin;
-}
+const db   = admin.firestore();
+const auth = admin.auth();
 
-module.exports = { admin, init };
+module.exports = { admin, db, auth };

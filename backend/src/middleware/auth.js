@@ -1,9 +1,18 @@
-// P02/P03 will verify Firebase ID tokens with admin.auth().verifyIdToken().
-// Stub returns 501 so accidental hits are obvious during P01.
+const { auth } = require('../config/firebase');
 
-module.exports = function authMiddleware(req, res, next) {
-  if (!req.headers.authorization) {
-    return res.status(401).json({ error: 'missing_authorization' });
+async function verifyToken(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing token' });
   }
-  return res.status(501).json({ error: 'auth_not_implemented_until_P02' });
-};
+  try {
+    const idToken = header.replace('Bearer ', '');
+    const decoded = await auth.verifyIdToken(idToken);
+    req.uid = decoded.uid;
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+module.exports = { verifyToken };

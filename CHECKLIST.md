@@ -5,14 +5,20 @@
 - [x] Both Flutter pubspecs correct (no `firebase_auth` / `cloud_firestore`)
 - [x] All 6 docs written (README, AI_LEDGER, ARCHITECTURE, DECISIONS, CHECKLIST, COMMIT_PATTERN)
 - [x] AI_LEDGER Entry #1 logged
-- [ ] `chore(scaffold): init monorepo backend-first architecture [AI]`
+- [x] `chore(scaffold): init monorepo backend-first architecture [AI]` — `82424a0`
 
 ## P02 — Backend Setup
-- [ ] Express server boots, `/health` returns 200
-- [ ] Firebase Admin initialised from service account
-- [ ] Auth middleware verifies Bearer ID tokens
-- [ ] CORS + JSON body parsing
-- [ ] `.env` loaded via `dotenv`
+- [ ] `npm run dev` → server on :3000 _(needs `serviceAccountKey.json` — user)_
+- [ ] `curl http://localhost:3000/health` → `{"status":"ok"}` _(needs boot)_
+- [x] Firebase Admin SDK code wired (`src/config/firebase.js`)
+- [x] Auth middleware verifies Bearer ID tokens (`src/middleware/auth.js`)
+- [x] CORS + JSON body parsing in `src/index.js`
+- [x] `.env` loaded via `dotenv`
+- [x] `seed.js` created (Aarav trainer + DK member)
+- [ ] `node seed.js` executed in Firebase project _(needs service account — user)_
+- [x] `firestore.rules` (deny-all) committed
+- [ ] Firestore rules deployed to project _(needs `firebase-tools` + login — user)_
+- [x] `npm install` clean, all files pass `node --check`
 
 ## P03 — Auth (Backend + Flutter)
 - [ ] Backend `/auth/signup` `/auth/login` `/auth/me`

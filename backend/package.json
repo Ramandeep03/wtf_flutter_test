@@ -1,22 +1,21 @@
 {
   "name": "wtf-backend",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Node.js backend — Firebase Admin, 100ms, Stream Chat. Single source of truth for both Flutter apps.",
+  "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
-  },
-  "engines": {
-    "node": ">=20"
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "express": "^4.18.0",
+    "firebase-admin": "^12.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "uuid": "^9.0.0",
+    "dotenv": "^16.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "firebase-admin": "^12.3.0",
-    "jsonwebtoken": "^9.0.2",
-    "stream-chat": "^8.40.0"
+    "stream-chat": "^8.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
   }
 }
