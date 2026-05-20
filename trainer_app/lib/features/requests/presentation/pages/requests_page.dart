@@ -188,6 +188,8 @@ class _RequestTile extends StatelessWidget {
                     context,
                     callRequestId: request.id,
                     role: 'trainer',
+                    memberId: request.memberId,
+                    trainerId: request.trainerId,
                   ),
                   icon: const Icon(Icons.videocam),
                   label: const Text('Join Call'),

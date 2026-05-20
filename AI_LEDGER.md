@@ -214,4 +214,19 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   8. **Camera-icon-in-AppBar deferred** to P14 — looking up "the active approved request" from inside a stateless AppBar action wants an async repo lookup that doesn't fit the current `_ConvAppBar` shape.
 - **Verified:** `flutter analyze` clean shared + both apps. `flutter test` shared 18/18 (12 prior + 6 new — token-failure / connected / reconnecting / reconnected / terminal-failure / non-terminal-no-op). `flutter test` guru 3/3.
 - **NOT verified:** runtime 100ms join. Requires real HMS_* creds and an approved request that successfully created a `room_meta` doc — gated by P11's approve-flow runtime gap.
-- **Commit:** `feat(call): CallBloc + 100ms in-call screen [AI]`
+- **Commit:** `98ae76e` — `feat(call): CallBloc + 100ms in-call screen [AI]`
+
+### #17 — Flutter session logs + post-call sheets
+- **Tool:** Claude Opus 4.7
+- **Intent:** P14 — full session-log lifecycle. Shared `SessionLogEntity` + `SessionLogRepository`. `PostCallCubit` (auto-create on init, then collect rating/notes, save). `SessionLogsCubit` (`ApiStatus<List>` + `LogFilter`). `PostCallView` (member vs trainer sheet, `_StarRating`). `SessionsView` (filter chips + list + draggable detail modal with rate-now / edit-notes). Wire SessionLogDraft.memberId/trainerId through the call flow properly.
+- **Prompt (≤2 lines):** "P14 — Session Logs + Post-Call. Build cubits + shared views + tests, and finally propagate memberId/trainerId through the call URL."
+- **Used:** yes
+- **Bug fix on top of P13:** `SessionLogDraft.memberId` / `.trainerId` in P13 were derived from `user.assignedTrainerId` — fine for member, broken for trainer (trainers don't have an `assignedTrainerId`). Now both ids come from the originating `CallRequestEntity` and are threaded `requestCallAndNavigate(memberId, trainerId)` → `/pre-join?…&memberId=&trainerId=` → `PreJoinPage(memberId, trainerId)` → `PreJoinView` constructs the draft with the correct ids.
+- **Deviations from brief:**
+  1. `PostCallState` uses a `PostCallPhase` enum (`creating | ready | saving | saved | failed`) instead of the brief's flat `ApiStatus`. Same ADR#5 reason as everywhere else.
+  2. `SessionLogsState` carries `listStatus: ApiStatus<List<…>>` + `filter`; `displayed` getter computes the filtered+sorted view.
+  3. Snackbar on save fires via `listenWhen: (p,c) => p.phase != c.phase`; brief's listener would have re-shown the toast on note edits.
+  4. Detail modal — "Rate Now" only shown to members without an existing rating; "Save Notes" shown for trainer always, for member only when expanded.
+- **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 24/24 (18 prior + 3 PostCallCubit create / save / fail + 3 SessionLogsCubit load-sorted / filter-last7 / filter-thisMonth). guru 3/3.
+- **Runtime gap:** session-log POST/PATCH work against the live backend (P05 endpoints are deployed), but producing a `SessionLogDraft` requires a real call to complete — gated on real 100ms creds.
+- **Commit:** `feat(sessions): PostCallCubit + SessionLogsCubit + backend calls [AI]`

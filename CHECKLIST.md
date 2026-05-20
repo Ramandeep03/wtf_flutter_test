@@ -179,4 +179,19 @@
 - [ ] Camera icon in chat AppBar (brief: "wire now") — left as no-op for now; looking up the active approved request from inside a stateless AppBar action wants an async repo lookup, will fold into P14.
 - [x] `feat(call): CallBloc + 100ms in-call screen [AI]`
 
-## P14–P17 — TBD (filled in as briefs arrive)
+## P14 — Flutter: Session Logs + Post-Call
+- [x] `SessionLogEntity` + `SessionLogRepository` (create / getForUser / update) in shared, uses `getList()`
+- [x] `PostCallCubit` — auto-creates session log on init, then `setRating/setMemberNote/setTrainerNote/save()`; phase enum (`creating | ready | saving | saved | failed`)
+- [x] `SessionLogsCubit` — `ApiStatus<List<…>>` + `LogFilter` (`all | last7Days | thisMonth`) + `displayed` getter sorted newest-first
+- [x] `PostCallView` (shared) — member sheet (5-star rating + note + "Submit Rating"), trainer sheet (notes + "Mark as Complete"). Snackbar "Session saved to your logs." then `go('/sessions')` on `phase=saved`.
+- [x] `SessionsView` (shared) — filter chips, skeleton/error/empty/data, list tiles, draggable detail modal with "Rate Now" (member, when no rating) and "Save Notes" (both roles)
+- [x] Per-app `PostCallPage` reads `SessionLogDraft` from `state.extra`; redirects if missing memberId/trainerId
+- [x] Per-app `SessionsPage` provides `SessionLogsCubit` and shows `SessionsView`
+- [x] `SessionLogDraft.memberId` / `.trainerId` now threaded properly: `requestCallAndNavigate(memberId, trainerId)` → `/pre-join?…&memberId=&trainerId=` → `PreJoinPage(memberId, trainerId)` → `PreJoinView` constructs the draft with the correct ids
+- [x] Both Join Call call sites (guru `MyRequestsPage`, trainer `RequestsPage` All-tab) now pass `request.memberId` + `request.trainerId`
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared 24/24 (18 prior + 3 PostCallCubit + 3 SessionLogsCubit) ; guru 3/3
+- [ ] **Runtime not verified end-to-end** — session-log creation hits the live backend (works against P05's `/session-logs` route), but the upstream flow that produces a `SessionLogDraft` requires the call flow to actually complete, which is still gated on real 100ms creds.
+- [x] `feat(sessions): PostCallCubit + SessionLogsCubit + backend calls [AI]`
+
+## P15–P17 — TBD (filled in as briefs arrive)

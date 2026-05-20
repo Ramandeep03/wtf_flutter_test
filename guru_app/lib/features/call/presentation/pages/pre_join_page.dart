@@ -5,7 +5,15 @@ import 'package:shared/shared.dart';
 class PreJoinPage extends StatelessWidget {
   final String callRequestId;
   final String role;
-  const PreJoinPage({super.key, required this.callRequestId, required this.role});
+  final String memberId;
+  final String trainerId;
+  const PreJoinPage({
+    super.key,
+    required this.callRequestId,
+    required this.role,
+    required this.memberId,
+    required this.trainerId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +24,7 @@ class PreJoinPage extends StatelessWidget {
         ),
         BlocProvider(create: (_) => CallBloc()),
       ],
-      child: PreJoinView(role: role),
+      child: PreJoinView(role: role, memberId: memberId, trainerId: trainerId),
     );
   }
 }

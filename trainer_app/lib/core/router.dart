@@ -56,6 +56,8 @@ GoRouter buildRouter(AuthCubit authCubit) => GoRouter(
           builder: (_, s) => PreJoinPage(
             callRequestId: s.uri.queryParameters['callRequestId'] ?? '',
             role:          s.uri.queryParameters['role'] ?? '',
+            memberId:      s.uri.queryParameters['memberId'] ?? '',
+            trainerId:     s.uri.queryParameters['trainerId'] ?? '',
           ),
         ),
         GoRoute(path: '/call',      builder: (_, __) => const CallPage()),

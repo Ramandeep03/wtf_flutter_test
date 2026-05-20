@@ -16,7 +16,14 @@ import 'call_view.dart';
 /// pushReplacement would have destroyed the bloc mid-SDK-handshake.
 class PreJoinView extends StatelessWidget {
   final String role;
-  const PreJoinView({super.key, required this.role});
+  final String memberId;
+  final String trainerId;
+  const PreJoinView({
+    super.key,
+    required this.role,
+    required this.memberId,
+    required this.trainerId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +37,11 @@ class PreJoinView extends StatelessWidget {
             ctx.pop();
           case CallPhase.ended || CallPhase.failed:
             if (callState.joinedAt != null) {
-              final user = ctx.read<AuthCubit>().state.userOrNull;
               final draft = SessionLogDraft(
                 joinedAt: callState.joinedAt!,
                 endedAt: DateTime.now(),
-                memberId: user?.isMember == true ? user!.uid : user?.assignedTrainerId,
-                trainerId: user?.isTrainer == true ? user!.uid : user?.assignedTrainerId,
+                memberId: memberId,
+                trainerId: trainerId,
               );
               ctx.pushReplacement('/post-call', extra: draft);
             }

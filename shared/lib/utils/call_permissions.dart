@@ -5,11 +5,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'snackbar_helper.dart';
 
 /// Requests mic + camera permissions, then navigates to `/pre-join`.
-/// Shows an error snackbar and does nothing if either is denied.
+/// Pass `memberId` and `trainerId` from the call request so the
+/// downstream `/post-call` flow can write the correct `session_logs` doc.
 Future<void> requestCallAndNavigate(
   BuildContext ctx, {
   required String callRequestId,
   required String role,
+  required String memberId,
+  required String trainerId,
 }) async {
   final mic = await Permission.microphone.request();
   final cam = await Permission.camera.request();
@@ -20,5 +23,10 @@ Future<void> requestCallAndNavigate(
     return;
   }
   if (!ctx.mounted) return;
-  ctx.push('/pre-join?callRequestId=$callRequestId&role=$role');
+  ctx.push(
+    '/pre-join?callRequestId=$callRequestId'
+    '&role=$role'
+    '&memberId=$memberId'
+    '&trainerId=$trainerId',
+  );
 }
