@@ -92,4 +92,19 @@
 - [ ] **Runtime not verified end-to-end**: real Stream connection requires real `STREAM_API_KEY` + `STREAM_API_SECRET` (backend `.env` currently has placeholders). Code returns a token, but Stream rejects it → `[CHAT] Stream connect error: …`. Re-test after dropping real creds.
 - [x] `feat(chat): Stream Chat init + StreamChatCubit [AI]`
 
-## P09–P17 — TBD (filled in as briefs arrive)
+## P09 — Flutter: Chat List Screen
+- [x] `SkeletonList` + `ErrorRetryWidget` in shared
+- [x] `ChatListView` (shared) — `StreamChannelListController` filter `members in [uid]`, `channelStateSort` by `last_message_at` DESC
+- [x] FAB + empty-state button push `/chat/conv`
+- [x] `_ChannelTile` shows peer name (auto-picks non-self member), last-message text + relative timestamp, unread badge
+- [x] `_EmptyChat` shows exact copy "No messages yet. Start the conversation."
+- [x] `ApiLoading` / `ApiInitial` → `SkeletonList(itemCount: 3)`
+- [x] `ApiFailure(:final error)` → `ErrorRetryWidget(message: error.message, onRetry: connect)`
+- [x] Per-app `ChatListPage` retains the channel-watch listener from P08
+- [x] Avatar background uses role-aware primary (guru blue / trainer red) — brief hardcoded guruPrimary
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared → 12/12 still pass
+- [ ] **Runtime not verified**: real channel list + unread badge need real Stream creds. Same blocker as P08.
+- [x] `feat(chat-list): StreamChannelListView + unread badge [AI]`
+
+## P10–P17 — TBD (filled in as briefs arrive)

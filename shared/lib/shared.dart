@@ -17,8 +17,11 @@ export 'services/auth_repository.dart';
 export 'services/stream_chat_service.dart';
 
 // Widgets
+export 'widgets/chat_list.dart';
+export 'widgets/error_retry_widget.dart';
 export 'widgets/login_form.dart';
 export 'widgets/role_app_bar.dart';
+export 'widgets/skeleton_list.dart';
 export 'widgets/splash.dart';
 
 // Utils

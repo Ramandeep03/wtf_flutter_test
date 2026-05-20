@@ -8,8 +8,8 @@ class ChatListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<StreamChatCubit, StreamChatState>(
-      listener: (ctx, state) async {
-        if (state is! ApiSuccess) return;
+      listenWhen: (prev, curr) => prev is! ApiSuccess && curr is ApiSuccess,
+      listener: (ctx, _) async {
         final user = ctx.read<AuthCubit>().state.userOrNull;
         if (user == null) return;
         final channel = StreamChatService.instance.getOrCreateChannel(
@@ -17,22 +17,9 @@ class ChatListPage extends StatelessWidget {
           user.isTrainer ? user.uid : user.assignedTrainerId ?? '',
         );
         await channel.watch();
-        AppLogger.log(LogTag.chat, 'channel watching id=${channel.id}');
+        logChannelWatched(channel);
       },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Chats')),
-        body: BlocBuilder<StreamChatCubit, StreamChatState>(
-          builder: (ctx, state) => Center(
-            child: switch (state) {
-              ApiInitial() || ApiLoading() => const CircularProgressIndicator(),
-              ApiSuccess() => const Text('Connected — channel list lands in P09.'),
-              ApiFailure(:final error) =>
-                Text('Chat connection failed:\n${error.message}', textAlign: TextAlign.center),
-              _ => const SizedBox.shrink(),
-            },
-          ),
-        ),
-      ),
+      child: const ChatListView(),
     );
   }
 }

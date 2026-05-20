@@ -108,4 +108,20 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   4. `StreamChatCubit` takes an optional `StreamChatService` parameter for testability.
 - **Verified:** `flutter analyze` clean on shared/guru/trainer; `flutter test` shared 12/12.
 - **NOT verified live:** real Stream connection needs real `STREAM_API_KEY`/`SECRET` in `backend/.env` (currently placeholders). Backend's `/stream-token` signs a JWT with the placeholder secret, Stream's servers reject it on `connectUser`, cubit transitions to `ApiFailure(ServerFailure(…))`. Code path is correct; re-test after credentials are dropped.
-- **Commit:** `feat(chat): Stream Chat init + StreamChatCubit [AI]`
+- **Commit:** `d7fd6a3` — `feat(chat): Stream Chat init + StreamChatCubit [AI]`
+
+### #10 — Flutter chat list screen
+- **Tool:** Claude Opus 4.7
+- **Intent:** P09 — chat list with skeleton loading, error retry, empty state, channel tiles with peer name + last message + relative timestamp + unread badge. Shared `ChatListView`; per-app `ChatListPage` retains P08's connect→`channel.watch()` listener.
+- **Prompt (≤2 lines):** "P09 — Flutter: Chat List Screen. Wire StreamChannelListController/View + SkeletonList + ErrorRetryWidget + _ChannelTile + _EmptyChat."
+- **Used:** yes
+- **Deviations from brief:**
+  1. Controller param renamed `sort:` → `channelStateSort:` and typed `SortOption<ChannelState>('last_message_at')` per actual `stream_chat_flutter_core` v8.3 API.
+  2. State checks use sealed-class pattern (`chatState is ApiLoading || chatState is ApiInitial`, `case ApiFailure(:final error)`). Brief used non-existent `ApiStatus.loading` enum values.
+  3. `_ChannelTile` avatar uses role-aware primary color (guru blue / trainer red) instead of brief's hardcoded `AppColors.guruPrimary` — the brief said "both apps — same widget" so role-awareness is needed.
+  4. Channel id from sorted UIDs (continuation of P08 deviation).
+  5. `stream_chat_flutter` import in `chat_list.dart` uses `hide StreamChatState` to dodge a collision with our cubit's typedef.
+  6. `SkeletonList` skeleton blocks pick the right border color for light/dark theme.
+- **Verified:** `flutter analyze` clean on shared + both apps; `flutter test` shared 12/12.
+- **NOT verified live:** still blocked on real Stream credentials (same as P08).
+- **Commit:** `feat(chat-list): StreamChannelListView + unread badge [AI]`
