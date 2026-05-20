@@ -4,6 +4,10 @@ Two Flutter apps (**guru_app**, **trainer_app**) talking to a single **Node.js b
 Backend is the *only* place Firebase Admin, 100ms, and Stream Chat server secrets live.
 Flutter clients never import `firebase_auth` or `cloud_firestore` directly.
 
+# Links for Live APK
+1. [Guru_App](https://drive.google.com/file/d/1GrzUjTv1PufXmGShHcRZVyUeJePZB-hF/view?usp=sharing)
+2. [Trainer_app](https://drive.google.com/file/d/1hyCHwS_P6zncntuvgF8oo3uuMhuSd3cM/view?usp=sharing)
+
 ## Architecture (one rule)
 
 ```
@@ -252,7 +256,8 @@ flutter run
 
 ## Demo
 
-_Demo link: TBD (added in P17)._ 
+[Guru_App](https://youtu.be/MRfmOMh8dJc)
+[Trainer_app](https://youtu.be/GiqmQclHv28)
 
 ## Living docs
 
