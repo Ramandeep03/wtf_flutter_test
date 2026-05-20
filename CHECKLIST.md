@@ -8,17 +8,17 @@
 - [x] `chore(scaffold): init monorepo backend-first architecture [AI]` — `82424a0`
 
 ## P02 — Backend Setup
-- [ ] `npm run dev` → server on :3000 _(needs `serviceAccountKey.json` — user)_
-- [ ] `curl http://localhost:3000/health` → `{"status":"ok"}` _(needs boot)_
-- [x] Firebase Admin SDK code wired (`src/config/firebase.js`)
+- [x] `npm run dev` → server on :3000
+- [x] `curl http://localhost:3000/health` → `{"status":"ok","ts":"..."}` ✅ verified 2026-05-20
+- [x] Firebase Admin SDK connected (project `wtf-fitness`)
 - [x] Auth middleware verifies Bearer ID tokens (`src/middleware/auth.js`)
 - [x] CORS + JSON body parsing in `src/index.js`
 - [x] `.env` loaded via `dotenv`
 - [x] `seed.js` created (Aarav trainer + DK member)
-- [ ] `node seed.js` executed in Firebase project _(needs service account — user)_
+- [x] Users present in Firebase Auth + Firestore (UIDs in `backend/.seed-uids.local`, gitignored)
 - [x] `firestore.rules` (deny-all) committed
-- [ ] Firestore rules deployed to project _(needs `firebase-tools` + login — user)_
-- [x] `npm install` clean, all files pass `node --check`
+- [x] Firestore rules deployed to project
+- [x] `chore(backend): setup Express + Firebase Admin SDK [AI]` — `602cc84`
 
 ## P03 — Auth (Backend + Flutter)
 - [ ] Backend `/auth/signup` `/auth/login` `/auth/me`

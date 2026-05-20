@@ -26,5 +26,6 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Prompt (≤2 lines):** "P02 — Backend Setup. Update package.json/firebase.js/auth.js/index.js verbatim from brief, add seed.js, firestore.rules. Keep P01 route stubs wired (option b)."
 - **Used:** yes
 - **Deviation:** Brief's `index.js` keeps route mounts commented; per user instruction (option b) we kept the P01 snake_case route file stubs but exposed them under the brief's kebab-case mount paths (`/call-requests`, `/session-logs`, `/hms-token`, `/stream-token`). Added `firebase.json` so `firestore.rules` is deployable.
-- **Not verified by me (needs user):** real Firebase project creation, dropping `serviceAccountKey.json`, running `node seed.js`, deploying rules, `/health` curl. Code parses cleanly (`node --check`) and `npm install` succeeds (268 packages, 8 low-severity advisories — see backend dir).
-- **Commit:** `chore(backend): setup Express + Firebase Admin SDK [AI]`
+- **Verified live (2026-05-20):** `npm start` boots, `/health` returns ok, Firebase Admin connects to project `wtf-fitness`, both seed users exist in Auth + Firestore (UIDs saved locally in `backend/.seed-uids.local`, gitignored), Firestore rules deployed (per user confirmation).
+- **Note:** Seed script is non-idempotent — re-running fails with `auth/email-already-exists`. Acceptable per brief ("run once"); existing UIDs were retrieved via `auth.getUserByEmail()` rather than re-seeding.
+- **Commit:** `602cc84` — `chore(backend): setup Express + Firebase Admin SDK [AI]`
