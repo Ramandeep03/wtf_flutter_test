@@ -77,6 +77,19 @@ class _ConversationViewState extends State<ConversationView> {
             Expanded(
               child: StreamMessageListView(messageBuilder: _messageBuilder),
             ),
+            // Stream pushes typingEvents on every keystroke. `StreamMessageInput`
+            // calls `channel.keyStroke()` on its own; this widget renders
+            // "<name> is typing…" when the peer's input is active and an
+            // empty Offstage otherwise (no layout jump).
+            StreamTypingIndicator(
+              channel: channel,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 4,
+              ),
+              style: AppTypography.label
+                  .copyWith(color: AppColors.textSecondary),
+            ),
             _QuickReplies(channel: channel),
             const StreamMessageInput(),
           ],
