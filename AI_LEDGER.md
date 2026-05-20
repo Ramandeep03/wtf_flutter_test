@@ -64,4 +64,15 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Added beyond brief:** two more composite indexes (`session_logs.memberId+startedAt DESC`, `trainerId+startedAt DESC`) appended to `firestore.indexes.json` and deployed; new "API reference" section in `backend/README.md` replacing the old phase-status table.
 - **Verified live (2026-05-20):** session-logs POST/GET (member side + trainer side, after index build)/PATCH all green. /hms-token returns a JWT decoding to {user_id, role, room_id, type:app, version:2, access_key, iat, nbf, exp, jti}. /stream-token returns a JWT with user_id claim.
 - **NOT live-verified:** `POST /rooms` — placeholder `HMS_APP_ACCESS_KEY/SECRET/TEMPLATE_ID` in .env make 100ms reject the management token with 500 "Token validation error". Code matches brief; re-test once real 100ms creds are dropped. Same caveat applies to the *usability* of /hms-token and /stream-token tokens by real services (they sign locally regardless of cred validity).
-- **Commit:** `feat(backend): session-logs + rooms + tokens routes [AI]`
+- **Commit:** `0759163` — `feat(backend): session-logs + rooms + tokens routes [AI]`
+
+### #7 — Flutter: ApiClient + Hive + theme + AppLogger
+- **Tool:** Claude Opus 4.7
+- **Intent:** P06 — bring up the Flutter foundation in `shared/`: `ApiClient` (singleton, http + Hive-backed Bearer token), `AppConstants`, `AppTheme`/`AppColors`/`AppTypography`/`AppSpacing`, `AppLogger` (20-entry ring), `Failure` hierarchy, DateTime/int extensions, `SnackbarHelper`. Per-app `core/hive_init.dart` + `core/bloc_observer.dart`. Both `main.dart` wired to `HiveInit.initialize()` + `Bloc.observer`.
+- **Prompt (≤2 lines):** "P06 — Flutter: ApiClient + Hive + Constants + AppLogger. Replace shared utils, add core/, update mains. Mid-task addendum: add dark theme support."
+- **Used:** yes
+- **Beyond brief — dark theme:** user asked mid-phase. `AppTheme.light(seed)` + `AppTheme.dark(seed)` both factory `ThemeData`. Neutrals split into light/dark constants; brand + status colors kept constant across themes. Both apps wire `theme:`, `darkTheme:`, and `themeMode: ThemeMode.system`.
+- **Beyond brief — barrel hygiene:** `api_state` exports its own `Failure`, which collides with the brief's `models/failures.dart`. Re-exported `package:api_state/api_state.dart` with `hide Failure` so the shared API has one canonical `Failure`.
+- **Beyond brief — `ApiClient` list-endpoint limitation:** brief's signatures return `Map<String,dynamic>`. Our `/users` and `/call-requests?…` return JSON arrays — those calls will throw at `jsonDecode(...) as Map`. Not a P06 problem since the only verified call is `/health`; we'll add a list-aware method (e.g. `getList`) when P07/P08 needs it.
+- **Verified live (2026-05-20):** `flutter analyze` clean across shared/guru_app/trainer_app; `flutter test` 7/7 passing (Hive token round-trip, Failure equality, extensions, ring buffer); separate live smoke test (`test/_health_smoke.dart`, prefixed `_` so it's opt-in) calls `ApiClient.instance.get('/health')` against the running backend and returns `{status: ok, ts: …}`.
+- **Commit:** `feat(flutter): ApiClient + Hive + AppLogger + theme [AI]`

@@ -54,7 +54,15 @@
 - [x] backend/README.md updated with full API reference
 - [x] `feat(backend): session-logs + rooms + tokens routes [AI]`
 
-## P06 — Flutter: ApiClient + Hive + Constants
-- [ ] (next phase)
+## P06 — Flutter: ApiClient + Hive + Constants + AppLogger
+- [x] `ApiClient.instance.get('/health')` returns `{"status":"ok"}` ✅ live test
+- [x] `ApiClient.saveToken(token)` stores in Hive; `storedToken` reads it ✅ unit test
+- [x] AppLogger, Failures, Extensions, SnackbarHelper, AppTheme compile ✅
+- [x] Both `main.dart` call `HiveInit.initialize()` + set `Bloc.observer = AppBlocObserver()` ✅
+- [x] `flutter analyze` shared → No issues found ✅
+- [x] `flutter analyze` guru_app + trainer_app → No issues found ✅
+- [x] `flutter test` shared → 7/7 passing (Hive round-trip, Failures equality, IntExt/DateTimeExt, AppLogger ring buffer)
+- [x] **Beyond brief:** dark theme support (`AppTheme.light(seed)` + `AppTheme.dark(seed)`, neutrals split, brand+status constant). Both apps use `themeMode: ThemeMode.system`.
+- [x] `feat(flutter): ApiClient + Hive + AppLogger + theme [AI]`
 
 ## P07–P17 — TBD (filled in as briefs arrive)
