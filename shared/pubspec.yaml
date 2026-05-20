@@ -23,9 +23,9 @@ dependencies:
   stream_chat_flutter: ^8.0.0
   hmssdk_flutter: ^1.11.1
   collection: ^1.18.0
-  flutter_local_notifications: ^17.2.2
-  timezone: ^0.9.2
-  flutter_timezone: ^2.0.0
+  flutter_local_notifications: ^20.1.0
+  timezone: ^0.10.0
+  flutter_timezone: ^4.0.0
   logger: ^2.4.0
 
 dev_dependencies:

@@ -5,8 +5,6 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../utils/app_logger.dart';
 
-/// Stable ids per notification kind so re-firing the same kind replaces
-/// the previous instance instead of stacking.
 class NotifId {
   static const int callApproved = 1;
   static const int callDeclined = 2;
@@ -40,12 +38,12 @@ class NotificationService {
       final tzName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(tzName));
     } catch (e) {
-      AppLogger.i(LogTag.notif, 'tz lookup failed, falling back to UTC: $e');
+      AppLogger.w(LogTag.notif, 'tz lookup failed, falling back to UTC: $e');
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
     await _plugin.initialize(
-      const InitializationSettings(
+      settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(),
       ),
@@ -64,7 +62,13 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    await _plugin.show(id, title, body, _details, payload: payload);
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: _details,
+      payload: payload,
+    );
     AppLogger.i(LogTag.notif, 'shown: $title');
   }
 
@@ -77,21 +81,19 @@ class NotificationService {
   }) async {
     if (scheduledAt.isBefore(DateTime.now())) return;
     await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledAt, tz.local),
-      _details,
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledAt, tz.local),
+      notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
     AppLogger.i(LogTag.notif, 'scheduled at $scheduledAt: $title');
   }
 
   Future<void> cancel(int id) async {
-    await _plugin.cancel(id);
+    await _plugin.cancel(id: id);
     AppLogger.i(LogTag.notif, 'cancelled id=$id');
   }
 }

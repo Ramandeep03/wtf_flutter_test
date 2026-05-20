@@ -275,4 +275,22 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   4. Backend launch config reads `backend/.env` via `envFile` so the same Firebase / HMS / Stream secrets the manual run uses also drive the F5 path.
   5. APK builds use `--release` and pass the same dart-defines so the built artifact talks to the correct backend.
 - **Push policy:** committed locally only — not pushed per the user's instruction.
-- **Commit:** `chore(vscode): launch + APK build configs [AI]`
+- **Commit:** `216902a` — `docs(vscode): VS Code launch + APK build configs (README copy-paste) [AI]`
+
+### #21 — Android build chain unblock (Kotlin daemon, desugaring, version bumps)
+- **Tool:** Claude Opus 4.7
+- **Intent:** User reported `flutter run` on device A015 failing with `e: The daemon has terminated unexpectedly on startup attempt #1` followed by `Application finished`. Cascade of build fixes to get a debug APK actually building on both apps with JDK 21 / AGP 8.11 / Kotlin 2.2.20 / Flutter 3.41.
+- **Used:** yes
+- **Fixes applied (in the order I hit them):**
+  1. **Kotlin daemon OOM on startup.** Both apps' `android/gradle.properties`: dropped Gradle JVM `-Xmx` from 8G → 4G (was crowding the host) and added `kotlin.daemon.jvmargs=-Xmx2G -XX:MaxMetaspaceSize=512m -XX:ReservedCodeCacheSize=256m` so the Kotlin daemon doesn't inherit a tiny default. Commented `kotlin.compiler.execution.strategy=in-process` as a fallback if it flakes again.
+  2. **`flutter_local_notifications` requires core library desugaring.** Both `app/build.gradle.kts`: `isCoreLibraryDesugaringEnabled = true` in `compileOptions`, added a `dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:…") }` block.
+  3. **`flutter_timezone` 2.1.0 uses the removed v1-embedding `Registrar`.** Bumped to `^4.0.0` (latest 5.0.2 also fine) in all three pubspecs.
+  4. **`flutter_local_notifications` 17.x pins `timezone ^0.9.0`, which blocked the bump.** Bumped `flutter_local_notifications` to `^20.1.0` everywhere.
+  5. **`flutter_local_notifications` v20 changed everything to named args.** Rewrote `NotificationService` to use `_plugin.show(id:…, title:…, …)`, `zonedSchedule(scheduledDate:…, …)`, `cancel(id:…)`, dropped the removed `UILocalNotificationDateInterpretation`, switched `initialize()` to the `settings:` named param.
+  6. **`desugar_jdk_libs` 2.0.4 below the required 2.1.4.** Bumped both build.gradle.kts.
+  7. **`image_gallery_saver_plus` 3.x (transitive of stream_chat_flutter) also uses removed `Registrar`.** Added `dependency_overrides: image_gallery_saver_plus: ^4.0.1` in both app pubspecs.
+- **Build result:** `flutter build apk --debug ...` succeeds on both apps — `guru_app/build/app/outputs/flutter-apk/app-debug.apk` and `trainer_app/.../app-debug.apk`.
+- **Verified:** `flutter analyze` clean shared + guru + trainer; `flutter test` shared 29/29 still passing.
+- **Heads-up:** Flutter's "Upgrading build.gradle.kts" auto-migration that ran on the user's `flutter run` had reverted `minSdk = 21` back to `flutter.minSdkVersion` in trainer's `build.gradle.kts`. Left it that way — current Flutter SDK's default minSdkVersion is now ≥ 21 anyway. Guru's stayed pinned to 21.
+- **Push policy:** local commit only.
+- **Commit:** `fix(android): unblock build chain — kotlin daemon, desugaring, dep bumps [AI]`
