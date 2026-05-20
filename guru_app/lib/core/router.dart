@@ -41,6 +41,11 @@ GoRouter buildRouter(AuthCubit authCubit) => GoRouter(
         final onLogin  = loc == '/login';
         final onOnboarding = loc == '/onboarding';
 
+        AppLogger.i(
+          LogTag.nav,
+          'redirect loc=$loc isAuth=$isAuth isLoading=$isLoading onboarded=$isOnboarded',
+        );
+
         if (isLoading) return onSplash ? null : '/splash';
         if (!isAuth && !onLogin) return '/login';
 
