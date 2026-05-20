@@ -36,3 +36,12 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Prompt (≤2 lines):** "add these steps to readme.md" (referring to the user-action steps spelled out at the end of P02).
 - **Used:** yes
 - **Commit:** `42c475f` — `docs(readme): add first-time setup steps (Firebase, seed, rules) [AI]`
+
+### #4 — Backend auth routes (login + me)
+- **Tool:** Claude Opus 4.7
+- **Intent:** P03 — implement `POST /auth/login` (Firebase Identity Toolkit REST → returns `{ idToken, refreshToken, user }`) and `GET /auth/me` (verifyToken middleware → returns Firestore user doc).
+- **Prompt (≤2 lines):** "P03 — Backend Auth Routes. Replace the auth.js stub with login + me per brief. Use native fetch (Node 20+)."
+- **Used:** yes
+- **Deviation:** Brief lists `node-fetch` as an option for Node <18. We're on Node 24 with `engines >= 20`, so native global `fetch` is used and `node-fetch` is not added to dependencies.
+- **Verified live (2026-05-20):** all 4 acceptance curls pass against the seeded DK account; `[AUTH] login uid=…` logs correctly.
+- **Commit:** `feat(backend): auth login + me routes [AI]`

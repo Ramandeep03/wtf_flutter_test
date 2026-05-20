@@ -21,7 +21,13 @@
 - [x] `chore(backend): setup Express + Firebase Admin SDK [AI]` — `602cc84`
 
 ## P03 — Auth (Backend + Flutter)
-- [ ] Backend `/auth/signup` `/auth/login` `/auth/me`
+### Backend (this phase)
+- [x] `POST /auth/login` valid creds → `{ idToken, refreshToken, user }` ✅ verified
+- [x] `POST /auth/login` wrong password → 401 `INVALID_LOGIN_CREDENTIALS` ✅ verified
+- [x] `GET /auth/me` with valid token → user profile ✅ verified
+- [x] `GET /auth/me` without token → 401 `Missing token` ✅ verified
+- [x] Console logs `[AUTH] login uid=…` ✅ verified
+### Flutter (later phase)
 - [ ] Flutter auth feature in both apps (data/domain/presentation)
 - [ ] Token stored in Hive
 
