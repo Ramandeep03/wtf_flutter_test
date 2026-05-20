@@ -69,6 +69,14 @@ router.patch('/:id', async (req, res) => {
     if (rating       != null) updates.rating       = rating;
     if (memberNotes  != null) updates.memberNotes  = memberNotes;
     if (trainerNotes != null) updates.trainerNotes = trainerNotes;
+
+    // Nothing to update (e.g. trainer pressed "Mark as Complete" without
+    // typing notes) — return the current doc instead of letting Firestore's
+    // update() throw "At least one field must be updated".
+    if (Object.keys(updates).length === 0) {
+      return res.json(doc.data());
+    }
+
     await ref.update(updates);
     res.json({ ...doc.data(), ...updates });
   } catch (e) {
