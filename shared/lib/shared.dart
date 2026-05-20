@@ -9,10 +9,12 @@ export 'models/user_entity.dart';
 
 // Blocs
 export 'blocs/auth_cubit.dart';
+export 'blocs/stream_chat_cubit.dart';
 
 // Services
 export 'services/api_client.dart';
 export 'services/auth_repository.dart';
+export 'services/stream_chat_service.dart';
 
 // Widgets
 export 'widgets/login_form.dart';

@@ -94,4 +94,18 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   - `flutter test` shared → **12/12** (7 from P06 utilities + 5 new AuthCubit bloc tests covering checkSession-ok, checkSession-no-token, login-success, login-failure, logout).
   - Live `_auth_live_smoke.dart` against running backend → **4/4** (login DK ok + token persisted, login wrong-pw → ApiFailure(INVALID_LOGIN_CREDENTIALS), Aarav login + new cubit instance + `checkSession()` via stored Hive token → ApiSuccess[Aarav] (auto-sign-in proven), logout → ApiInitial + token cleared).
 - **Not verified by me:** rendering on a real emulator. The visual checks ("home shows DK", "snackbar appears on wrong pw", "RoleAppBar badge") will pass given the cubit/UI plumbing tested, but I didn't boot a simulator. User can `flutter run` in either app to confirm.
-- **Commit:** `feat(auth): AuthCubit + login screens + router [AI]`
+- **Commit:** `d16ea51` — `feat(auth): AuthCubit + login screens + router [AI]`
+
+### #9 — Flutter Stream Chat init
+- **Tool:** Claude Opus 4.7
+- **Intent:** P08 — wrap Stream Chat lifecycle: `StreamChatService` singleton, `StreamChatCubit` (connect/disconnect), `BlocListener<AuthCubit>` in `main.dart` that drives connect on `ApiSuccess<UserEntity>` and disconnect otherwise, `StreamChat` widget wrapping the router, `ChatListPage` listening for connect → `channel.watch()` for the deterministic 1:1 DK↔Aarav channel.
+- **Prompt (≤2 lines):** "P08 — Flutter: Stream Chat Initialisation. Wire service + cubit + StreamChat wrapper + ChatListPage channel watch."
+- **Used:** yes
+- **Deviations from brief:**
+  1. `StreamChatState` is `typedef ApiStatus<Unit>` (fpdart's `Unit`) — same ADR#5 reason as P07.
+  2. `BlocListener<AuthCubit>` uses sealed-class pattern matching (`case ApiSuccess(:final data)`) instead of `state.isAuth` / `state.user!`.
+  3. `getOrCreateChannel` builds the channel id from **sorted** UIDs so member-side and trainer-side both resolve the same id regardless of who navigates first; the brief's `chat-$memberUid-$trainerUid` would have created two ids for the same pair.
+  4. `StreamChatCubit` takes an optional `StreamChatService` parameter for testability.
+- **Verified:** `flutter analyze` clean on shared/guru/trainer; `flutter test` shared 12/12.
+- **NOT verified live:** real Stream connection needs real `STREAM_API_KEY`/`SECRET` in `backend/.env` (currently placeholders). Backend's `/stream-token` signs a JWT with the placeholder secret, Stream's servers reject it on `connectUser`, cubit transitions to `ApiFailure(ServerFailure(…))`. Code path is correct; re-test after credentials are dropped.
+- **Commit:** `feat(chat): Stream Chat init + StreamChatCubit [AI]`

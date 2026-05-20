@@ -81,4 +81,15 @@
 - [x] `feat(auth): AuthCubit + login screens + router [AI]`
 - [ ] **Runtime UI verification on an emulator** — not done; needs an Android/iOS sim session.
 
-## P08–P17 — TBD (filled in as briefs arrive)
+## P08 — Flutter: Stream Chat Initialisation
+- [x] `StreamChatService` singleton wrapping `StreamChatClient` ✅
+- [x] `StreamChatCubit` = `Cubit<ApiStatus<Unit>>` (connect / disconnect)
+- [x] Both apps: `MultiBlocProvider(authCubit + streamChatCubit)` + `BlocListener<AuthCubit>` that calls `streamChatCubit.connect(user)` on `ApiSuccess<UserEntity>`, `disconnect()` otherwise
+- [x] Both apps: `MaterialApp.router(builder: StreamChat(client:..., child: child))`
+- [x] `ChatListPage` (both apps) listens for `StreamChatCubit` `ApiSuccess` and calls `channel.watch()` for the DK↔Aarav 1:1 channel
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared → 12/12 still pass
+- [ ] **Runtime not verified end-to-end**: real Stream connection requires real `STREAM_API_KEY` + `STREAM_API_SECRET` (backend `.env` currently has placeholders). Code returns a token, but Stream rejects it → `[CHAT] Stream connect error: …`. Re-test after dropping real creds.
+- [x] `feat(chat): Stream Chat init + StreamChatCubit [AI]`
+
+## P09–P17 — TBD (filled in as briefs arrive)
