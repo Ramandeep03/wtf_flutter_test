@@ -261,4 +261,18 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   4. **`ApiClient._headers` audited** — brief said "no logging here", code already had none; added a comment to make the no-log policy load-bearing.
 - **Codebase grep:** zero matches for `token=$`, `idToken=$`, `password=$`, `uid=${user.uid}` (without mask) in log strings across `shared/lib`, `guru_app/lib`, `trainer_app/lib`, `backend/src`.
 - **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 29/29 (24 prior + 5 new `LogMask` unit tests covering token / uid / email / secret / url helpers).
-- **Commit:** `feat(logging): AppLogger + LogMask sensitive data masking [AI]`
+- **Commit:** `ea2eb0d` — `feat(logging): AppLogger + LogMask sensitive data masking [AI]`
+
+### #20 — VS Code launch + APK build configs
+- **Tool:** Claude Opus 4.7
+- **Intent:** Add `.vscode/launch.json` (Backend + Guru + Trainer + Backend+Guru / Backend+Trainer compounds) and `.vscode/tasks.json` (per-app APK release builds + a "Build BOTH APKs" sequence as the default build task + an "npm install" helper). Update README.md with a VS Code section.
+- **Prompt (≤2 lines):** "Create vs code code runner json for server and app and one to build both applications apk. and keep in mind for android as well. add that in readme.md file and do not push it. addd this in ledger."
+- **Used:** yes
+- **Notes:**
+  1. Flutter configs run on whichever device is currently selected in VS Code (no `deviceId` pin) — user explicitly asked not to make them simulator-special.
+  2. `--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000` baked in for Android emulator default; iOS sim / physical device users edit the value in `launch.json`.
+  3. `--dart-define=STREAM_CHAT_API_KEY=9bezp69e22kw` baked in — Stream's API key is publishable per their docs (the secret stays in `backend/.env`).
+  4. Backend launch config reads `backend/.env` via `envFile` so the same Firebase / HMS / Stream secrets the manual run uses also drive the F5 path.
+  5. APK builds use `--release` and pass the same dart-defines so the built artifact talks to the correct backend.
+- **Push policy:** committed locally only — not pushed per the user's instruction.
+- **Commit:** `chore(vscode): launch + APK build configs [AI]`

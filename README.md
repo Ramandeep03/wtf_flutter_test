@@ -62,7 +62,144 @@ DK's `assignedTrainerId` is set to Aarav's UID. UIDs are also written locally to
 
 ## Run (after first-time setup)
 
-### Backend
+### From VS Code (recommended)
+Open the workspace in VS Code, then use the **Run and Debug** panel (Cmd+Shift+D). Configs:
+
+| Config | What it does |
+|---|---|
+| **Backend (npm run dev)** | Launches the Node server with nodemon; loads `backend/.env`. |
+| **Guru App** | `flutter run` against `guru_app/`, on the device currently selected in VS Code. |
+| **Trainer App** | Same, against `trainer_app/`. |
+| **Backend + Guru** *(compound)* | Backend + Guru together; Stop button stops both. |
+| **Backend + Trainer** *(compound)* | Backend + Trainer together. |
+
+Both Flutter configs pass `--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000` (Android emulator default). For an iOS sim or a physical device, edit `.vscode/launch.json` to use `http://localhost:3000` or your LAN IP.
+
+#### Building release APKs
+Cmd+Shift+P → **Tasks: Run Task**:
+
+| Task | Output |
+|---|---|
+| **Build Guru APK (release)** | `guru_app/build/app/outputs/flutter-apk/app-release.apk` |
+| **Build Trainer APK (release)** | `trainer_app/build/app/outputs/flutter-apk/app-release.apk` |
+| **Build BOTH APKs (release)** | both, sequentially — also the default `Cmd+Shift+B` build task |
+| **Backend: npm install** | runs `npm install` in `backend/` |
+
+> Android-specific: APKs are signed with the debug keystore so `flutter run --release` works without setup. For a real release sign, add a signing config to `guru_app/android/app/build.gradle.kts` (and trainer's).
+
+#### `.vscode/launch.json` (copy-paste — replace `YOUR_STREAM_KEY`)
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend (npm run dev)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "envFile": "${workspaceFolder}/backend/.env",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Guru App",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/guru_app",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ]
+    },
+    {
+      "name": "Trainer App",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/trainer_app",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Backend + Guru",
+      "configurations": ["Backend (npm run dev)", "Guru App"],
+      "stopAll": true
+    },
+    {
+      "name": "Backend + Trainer",
+      "configurations": ["Backend (npm run dev)", "Trainer App"],
+      "stopAll": true
+    }
+  ]
+}
+```
+
+#### `.vscode/tasks.json` (copy-paste — replace `YOUR_STREAM_KEY`)
+```jsonc
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Guru APK (release)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", "apk", "--release",
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ],
+      "options": { "cwd": "${workspaceFolder}/guru_app" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "clear": true },
+      "group": "build"
+    },
+    {
+      "label": "Build Trainer APK (release)",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build", "apk", "--release",
+        "--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000",
+        "--dart-define=STREAM_CHAT_API_KEY=YOUR_STREAM_KEY"
+      ],
+      "options": { "cwd": "${workspaceFolder}/trainer_app" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "reveal": "always", "clear": true },
+      "group": "build"
+    },
+    {
+      "label": "Build BOTH APKs (release)",
+      "dependsOn": ["Build Guru APK (release)", "Build Trainer APK (release)"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Backend: npm install",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    }
+  ]
+}
+```
+
+> `YOUR_STREAM_KEY` is your Stream Chat publishable API key from the Stream dashboard (App Access Keys). The Stream **secret** must stay in `backend/.env` only.
+
+### From the terminal
+
+#### Backend
 ```bash
 cd backend
 npm run dev                   # http://localhost:3000
