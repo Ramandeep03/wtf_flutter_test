@@ -11,6 +11,7 @@ import '../features/call/presentation/pages/post_call_page.dart';
 import '../features/call/presentation/pages/pre_join_page.dart';
 import '../features/chat/presentation/pages/chat_list_page.dart';
 import '../features/chat/presentation/pages/conversation_page.dart';
+import '../features/scheduler/presentation/pages/my_requests_page.dart';
 import '../features/scheduler/presentation/pages/scheduler_page.dart';
 import '../features/sessions/presentation/pages/sessions_page.dart';
 
@@ -49,6 +50,7 @@ GoRouter buildRouter(AuthCubit authCubit) => GoRouter(
         GoRoute(path: '/chat',      builder: (_, __) => const ChatListPage()),
         GoRoute(path: '/chat/conv', builder: (_, __) => const ConversationPage()),
         GoRoute(path: '/scheduler', builder: (_, __) => const SchedulerPage()),
+        GoRoute(path: '/requests',  builder: (_, __) => const MyRequestsPage()),
         GoRoute(
           path: '/pre-join',
           builder: (_, s) => PreJoinPage(

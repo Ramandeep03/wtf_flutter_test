@@ -138,4 +138,24 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   4. `sendSystemMessage` takes explicit `memberUid`/`trainerUid` params since the helper has no `BuildContext` to read auth from. Use cases that call it know the UIDs from the call request anyway.
 - **Verified:** `flutter analyze` clean shared + both apps; `flutter test` shared 12/12.
 - **NOT verified live:** real-time delivery / typing / read receipts blocked on real Stream creds (same as P08/P09).
-- **Commit:** `feat(chat-conv): StreamMessageListView + quick replies + system bubble [AI]`
+- **Commit:** `d3112ef` — `feat(chat-conv): StreamMessageListView + quick replies + system bubble [AI]`
+
+### #12 — Flutter scheduler + request flow
+- **Tool:** Claude Opus 4.7
+- **Intent:** P11 — full request lifecycle. Shared `CallRequestEntity` + `canJoinCall`, `CallRequestRepository` (4 methods) + minimal `RoomRepository`, `generateSlots`. Guru `SchedulerCubit` form state, `MyRequestsCubit`, `SchedulerPage` (day chips, slot wrap with past greyed, 140-char note, snackbar + go('/requests') on submit), `MyRequestsPage`. Trainer `RequestsBloc` (Loaded / Approved / Declined) wiring POST /rooms → PATCH status → sendSystemMessage → reload, `RequestsPage` with Pending/All tabs, per-row spinner, decline-reason bottom sheet. 3 SchedulerCubit blocTests.
+- **Prompt (≤2 lines):** "P11 — Scheduler + Request Flow. Shared entity/repo/slots; Guru SchedulerCubit+MyRequestsCubit+pages with /requests route; Trainer RequestsBloc+page; sendSystemMessage on approve/decline."
+- **Used:** yes
+- **Tech-debt paid off:** P06's known gap — `ApiClient.get` only returned Map. Added `ApiClient.getList()` returning `Future<List<dynamic>>`. Repository uses it for `/call-requests?…` and treats non-array responses as ApiException.
+- **Deviations from brief:**
+  1. `SchedulerState` is form-shaped not pure ApiStatus — it holds date/slot/note + a nested `submitStatus: ApiStatus<Unit>` per ADR#5. Brief's `ApiStatus` enum doesn't exist.
+  2. `MyRequestsCubit` is `Cubit<ApiStatus<List<CallRequestEntity>>>` directly; brief proposed a custom `AsyncState<T>` helper — superseded by `api_state`'s sealed classes.
+  3. `RequestsState` carries `list: ApiStatus<List<...>>` + `processingIds: Set<String>` + `lastError: String?`. Pattern matching for list rendering; snackbar fired on `lastError` change.
+  4. `RoomRepository` split out from `CallRequestRepository` so the approve flow makes the dependency explicit and is easy to mock.
+  5. Brief's `RequestApproved` flow ordering followed: rooms first, then PATCH, then system message; failure at rooms aborts and surfaces the error (rather than masking it and proceeding).
+  6. `sendSystemMessage` wrapped in try/catch in both approve and decline branches so a failing Stream Chat doesn't roll back a successful PATCH. Logged as `[CHAT] system msg failed (…)`.
+- **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 12/12. guru_app 3/3 SchedulerCubit blocTests covering past-slot reject, >140-char reject, success path with slot/note cleared.
+- **Runtime gaps documented:**
+  - `POST /rooms` returns 500 against placeholder HMS_* creds; trainer approve will currently snackbar "Could not create call room: …". Will green once real 100ms creds land.
+  - `sendSystemMessage` will throw against placeholder STREAM_* creds; caught, logged, PATCH still succeeds.
+  - Local notification to DK after trainer approves is P14 scope.
+- **Commit:** `feat(scheduler): SchedulerCubit + RequestsBloc + backend calls [AI]`

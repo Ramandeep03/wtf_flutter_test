@@ -32,6 +32,19 @@ class ApiClient {
     return _handle(res);
   }
 
+  /// For endpoints that return a JSON array (e.g. `/users`,
+  /// `/call-requests?memberId=…`, `/session-logs?userId=…`).
+  Future<List<dynamic>> getList(String path) async {
+    final res = await http.get(Uri.parse('$_base$path'), headers: _headers);
+    final body = jsonDecode(res.body);
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (body is List) return body;
+      throw ApiException(res.statusCode, 'Expected JSON array, got ${body.runtimeType}');
+    }
+    final msg = body is Map ? (body['error']?.toString() ?? 'Unknown error') : 'Unknown error';
+    throw ApiException(res.statusCode, msg);
+  }
+
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
     final res = await http.post(
       Uri.parse('$_base$path'),

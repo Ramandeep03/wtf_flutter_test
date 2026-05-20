@@ -121,4 +121,26 @@
 - [ ] **Runtime not verified**: real Stream creds still needed (same blocker as P08/P09).
 - [x] `feat(chat-conv): StreamMessageListView + quick replies + system bubble [AI]`
 
-## P11–P17 — TBD (filled in as briefs arrive)
+## P11 — Flutter: Scheduler + Request Flow
+- [x] `ApiClient.getList()` (paid down P06 list-endpoint debt)
+- [x] `CallRequestEntity` + `canJoinCall(r)` (shared)
+- [x] `CallRequestRepository` (create/getForMember/getForTrainer/updateStatus) + `RoomRepository.create` (shared)
+- [x] `generateSlots(date)` 30-min slots between `slotStartHour`/`slotEndHour` (shared)
+- [x] Guru `SchedulerCubit` — form state (date/slot/note/submitStatus) with past-slot / 140-char / no-slot guards
+- [x] Guru `MyRequestsCubit` = `Cubit<ApiStatus<List<CallRequestEntity>>>`
+- [x] Guru `SchedulerPage` — day chips (Today/Tomorrow/+2), 30-min slot wrap (past = greyed, no-tap), 140-char note, submit button → snackbar + `ctx.go('/requests')`
+- [x] Guru `MyRequestsPage` — list with status badge (Pending⏳ / Approved✓ / Declined+reason) + Join Call button when `canJoinCall`
+- [x] Guru router: added `/requests` route
+- [x] Trainer `RequestsBloc` — events Loaded/Approved/Declined, state holds list + `processingIds` set + last error
+- [x] Approve flow wires: `POST /rooms` → `PATCH /call-requests/:id status=approved` → `sendSystemMessage("Call approved for …")` → reload
+- [x] Decline flow wires: `PATCH … status=declined declineReason=…` → `sendSystemMessage("Call request declined. Reason: …")` → reload
+- [x] Trainer `RequestsPage` — Pending / All tabs, per-row spinner via `processingIds`, decline reason bottom sheet
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared 12/12 ; guru 3/3 SchedulerCubit blocTests
+- [ ] **Runtime gaps** (in ledger #12):
+  - Approve `POST /rooms` returns 500 against placeholder 100ms creds — approve flow surfaces error snackbar.
+  - `sendSystemMessage` no-ops/errors against placeholder Stream creds; wrapped in try/catch so the underlying PATCH still succeeds.
+  - Local notification to DK on approve = P14 work.
+- [x] `feat(scheduler): SchedulerCubit + RequestsBloc + backend calls [AI]`
+
+## P12–P17 — TBD (filled in as briefs arrive)
