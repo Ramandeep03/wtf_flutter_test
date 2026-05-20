@@ -13,6 +13,6 @@ class AppConstants {
   static const joinCallWindowMinutes = 10;
   static const maxNoteLength = 140;
   static const slotDurationMinutes = 30;
-  static const slotStartHour = 6;   // 06:00
-  static const slotEndHour   = 22;  // 22:00
+  static const slotStartHour = 6; // 06:00
+  static const slotEndHour = 22; // 22:00
 }

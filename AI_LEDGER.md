@@ -270,7 +270,7 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Used:** yes
 - **Notes:**
   1. Flutter configs run on whichever device is currently selected in VS Code (no `deviceId` pin) — user explicitly asked not to make them simulator-special.
-  2. `--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000` baked in for Android emulator default; iOS sim / physical device users edit the value in `launch.json`.
+  2. `--dart-define=BACKEND_BASE_URL=http://10.0.2.2:3000` baked in for Android emulator default; iOS sim / physical device users edit the value in `launch.json` (e.g. host LAN IP `http://192.168.1.10:3000`).
   3. `--dart-define=STREAM_CHAT_API_KEY=9bezp69e22kw` baked in — Stream's API key is publishable per their docs (the secret stays in `backend/.env`).
   4. Backend launch config reads `backend/.env` via `envFile` so the same Firebase / HMS / Stream secrets the manual run uses also drive the F5 path.
   5. APK builds use `--release` and pass the same dart-defines so the built artifact talks to the correct backend.
@@ -293,4 +293,13 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Verified:** `flutter analyze` clean shared + guru + trainer; `flutter test` shared 29/29 still passing.
 - **Heads-up:** Flutter's "Upgrading build.gradle.kts" auto-migration that ran on the user's `flutter run` had reverted `minSdk = 21` back to `flutter.minSdkVersion` in trainer's `build.gradle.kts`. Left it that way — current Flutter SDK's default minSdkVersion is now ≥ 21 anyway. Guru's stayed pinned to 21.
 - **Push policy:** local commit only.
-- **Commit:** `fix(android): unblock build chain — kotlin daemon, desugaring, dep bumps [AI]`
+- **Commit:** `2af53ac` — `fix(android): unblock build chain — kotlin daemon, desugaring, dep bumps [AI]`
+
+### #22 — Stream Chat user upsert (channel members must exist)
+- **Tool:** Claude Opus 4.7
+- **Intent:** User reported `StreamChatNetworkError(code: 4): GetOrCreateChannel failed with error: "The following users are involved in channel create operation, but don't exist: [<Aarav's UID>]"`. Stream requires both peers of a 1:1 channel to exist as Stream users before `client.channel(..., extraData: { members: [...] })` succeeds. We never created the peer-side user.
+- **Used:** yes
+- **Fix:** rewrote `backend/src/routes/stream_token.js` to look up the requesting user's Firestore doc, derive the peer set (member → `assignedTrainerId`; trainer → all members whose `assignedTrainerId` is this trainer), and `client.upsertUsers([self, ...peers])` before issuing the token. Guarantees that as soon as either side has logged in, both ends of the channel exist server-side.
+- **Verified live (2026-05-20):** DK login → `GET /stream-token` returned token + server logged `[CHAT] stream token issued uid=K8n***jD2 upserted=2` (DK + Aarav). Channel creation no longer 400s on the client.
+- **Drive-by cleanup:** A find-replace had corrupted `.env.example`, `README.md` (5 places), `.vscode/launch.json` (comment), and AI_LEDGER #20 — `http://192.168.1.10:3000` got split across a newline + spaces. All restored to clean URLs.
+- **Commit:** `fix(chat): upsert Stream users so channel members exist [AI]`
