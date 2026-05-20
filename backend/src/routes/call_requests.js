@@ -59,24 +59,35 @@ router.get('/', async (req, res) => {
 });
 
 // PATCH /call-requests/:id
-// Body: { status, declineReason? }
+// Body: { status?, declineReason?, endedAt? }
+// At least one of `status` or `endedAt` must be present.
 router.patch('/:id', async (req, res) => {
   try {
-    const { status, declineReason } = req.body;
+    const { status, declineReason, endedAt } = req.body;
     const allowed = ['pending', 'approved', 'declined', 'cancelled'];
-    if (!allowed.includes(status)) {
+
+    if (status !== undefined && !allowed.includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
+    }
+    if (status === undefined && endedAt === undefined) {
+      return res.status(400).json({ error: 'Nothing to update (status or endedAt required)' });
     }
 
     const ref = db.collection('call_requests').doc(req.params.id);
     const doc = await ref.get();
     if (!doc.exists) return res.status(404).json({ error: 'Not found' });
 
-    const updates = { status };
-    if (declineReason) updates.declineReason = declineReason;
+    const updates = {};
+    if (status !== undefined)        updates.status        = status;
+    if (declineReason)               updates.declineReason = declineReason;
+    if (endedAt !== undefined)       updates.endedAt       = endedAt;
     await ref.update(updates);
 
-    console.log(`[SCHEDULE] updated id=${req.params.id} status=${status}`);
+    console.log(
+      `[SCHEDULE] updated id=${req.params.id}` +
+      (status   !== undefined ? ` status=${status}` : '') +
+      (endedAt  !== undefined ? ` endedAt=${endedAt}` : '')
+    );
     res.json({ ...doc.data(), ...updates });
   } catch (e) {
     res.status(500).json({ error: e.message });

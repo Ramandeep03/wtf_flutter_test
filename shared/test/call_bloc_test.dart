@@ -31,6 +31,7 @@ void main() {
         return CallBloc(api: api);
       },
       act: (b) => b.add(const CallJoinRequested(
+        callRequestId: 'cr-1',
         roomId: 'room-1',
         userId: 'u-1',
         userName: 'DK',

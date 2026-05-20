@@ -131,7 +131,9 @@ class _PreJoinScaffold extends StatelessWidget {
                           onPressed: _joinEnabled(s, callState)
                               ? () {
                                   final roomId = (s.loadStatus as ApiSuccess<String>).data;
+                                  final preJoin = ctx.read<PreJoinCubit>();
                                   ctx.read<CallBloc>().add(CallJoinRequested(
+                                        callRequestId: preJoin.callRequestId,
                                         roomId: roomId,
                                         userId: user!.uid,
                                         userName: user.name,
