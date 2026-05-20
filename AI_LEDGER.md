@@ -176,4 +176,24 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   - **AndroidManifest + build.gradle**: Both Flutter apps are still Dart-only (no `android/` or `ios/` folders). Brief asks for permission entries + `minSdk 21` / `targetSdk 34`. To do this I'd need to run `flutter create --platforms=android,ios .` in each app, which generates ~50 platform files (kotlin MainActivity, gradle wrappers, ios Runner, default package id `com.example.guru_app`). Asked the user; awaiting their choice on package id before materializing.
 - **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 12/12 + guru 3/3 still passing.
 - **Runtime gap:** `GET /rooms` is currently a 404 unless a trainer has approved a request and successfully created a 100ms room — which itself needs real HMS_* creds.
-- **Commit:** `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`
+- **Commit:** `75f768b` — `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`
+
+### #14 — Materialize android + ios platform projects
+- **Tool:** Claude Opus 4.7
+- **Intent:** Run `flutter create --platforms=android,ios --org=dev.ramandeep .` in both apps so the Dart-only scaffolds from P01 finally have native projects. Pure scaffold commit; no Dart changes.
+- **Prompt (≤2 lines):** User: "1 do dev.ramandeep for both and 2 use both android and ios I will test on both and 3 yes seperate them but first push the current code".
+- **Used:** yes
+- **Output:** ~63 native files per app — Kotlin `MainActivity` at `dev/ramandeep/<app>/`, gradle Kotlin DSL, gradle wrapper, iOS Runner xcodeproj/workspace, `Info.plist`, `LaunchScreen.storyboard`, `Main.storyboard`, full app-icon + launch-image asset catalog, `Podfile`, `.gitignore`, `.metadata`, `README.md`. Default app icons are stock Flutter blue/white "F".
+- **Deleted:** boilerplate `test/widget_test.dart` files that referenced the counter-app `MyApp` class which doesn't exist in our `main.dart`.
+- **Verified:** `flutter analyze` clean on both apps post-scaffold.
+- **Commit:** `9c888c4` — `chore(scaffold): materialize android + ios platforms [AI]`
+
+### #15 — Patch native projects for call permissions
+- **Tool:** Claude Opus 4.7
+- **Intent:** P12 brief follow-up: add the 6 Android `<uses-permission>` entries (INTERNET / CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS / FOREGROUND_SERVICE / BLUETOOTH_CONNECT), pin Android `minSdk = 21` / `targetSdk = 34`, and add the iOS counterparts: `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `NSBluetoothAlwaysUsageDescription`, `NSBluetoothPeripheralUsageDescription`. Set Podfile `platform :ios, '13.0'` and `GCC_PREPROCESSOR_DEFINITIONS` (`PERMISSION_CAMERA=1`, `PERMISSION_MICROPHONE=1`, `PERMISSION_BLUETOOTH=1`) so `permission_handler` only compiles the macros we actually use.
+- **Used:** yes
+- **Beyond brief:**
+  - iOS plist + Podfile changes (brief only listed Android); without them the `permission_handler` runtime calls would silently no-op on iOS.
+  - Android gradle file is Kotlin DSL (`build.gradle.kts`) since the scaffold from #14 used the modern template; brief showed legacy Groovy.
+- **Verified:** `flutter analyze` clean on both apps. Not yet `flutter build` against either platform (no SDK / pod install run from here).
+- **Commit:** `chore(platform): call permissions + minSdk/targetSdk in android + ios [AI]`

@@ -156,7 +156,11 @@
 - [x] Cancel pops back via `context.pop()`
 - [x] `flutter analyze` shared + guru + trainer → No issues
 - [x] `flutter test` shared 12/12 ; guru 3/3
-- [ ] **Platform gap** — neither app has `android/` or `ios/` folders yet (P01 scaffolded as Dart-only). AndroidManifest permission entries + `minSdk 21` / `targetSdk 34` can't be added until `flutter create --platforms=android,ios .` is run in each app. Documented; awaiting user choice on package id.
+- [x] Both apps materialized via `flutter create --platforms=android,ios --org=dev.ramandeep .` — `9c888c4`
+- [x] AndroidManifest: 6 `<uses-permission>` entries (INTERNET / CAMERA / RECORD_AUDIO / MODIFY_AUDIO_SETTINGS / FOREGROUND_SERVICE / BLUETOOTH_CONNECT)
+- [x] Android `minSdk = 21` / `targetSdk = 34` (in `app/build.gradle.kts`)
+- [x] iOS Info.plist usage descriptions (NSCamera / NSMicrophone / NSBluetoothAlways / NSBluetoothPeripheral)
+- [x] iOS Podfile: `platform :ios, '13.0'` + `permission_handler` preprocessor macros
 - [ ] **Runtime gap** — `GET /rooms` returns 404 unless a `room_meta` doc has been created via trainer-approve (which itself needs real 100ms creds). End-to-end pre-join can't be validated until those creds drop.
 - [x] `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`
 
