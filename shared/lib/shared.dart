@@ -1,14 +1,23 @@
 library shared;
 
 // 3rd-party re-exports
-// Hide api_state's own `Failure` — we expose our domain Failure from models/failures.dart.
-export 'package:api_state/api_state.dart' hide Failure;
+export 'package:api_state/api_state.dart';
 
 // Models
 export 'models/failures.dart';
+export 'models/user_entity.dart';
+
+// Blocs
+export 'blocs/auth_cubit.dart';
 
 // Services
 export 'services/api_client.dart';
+export 'services/auth_repository.dart';
+
+// Widgets
+export 'widgets/login_form.dart';
+export 'widgets/role_app_bar.dart';
+export 'widgets/splash.dart';
 
 // Utils
 export 'utils/app_logger.dart';

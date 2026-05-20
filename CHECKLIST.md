@@ -65,4 +65,20 @@
 - [x] **Beyond brief:** dark theme support (`AppTheme.light(seed)` + `AppTheme.dark(seed)`, neutrals split, brand+status constant). Both apps use `themeMode: ThemeMode.system`.
 - [x] `feat(flutter): ApiClient + Hive + AppLogger + theme [AI]`
 
-## P07–P17 — TBD (filled in as briefs arrive)
+## P07 — Flutter: AuthCubit + Login Screens + Routing
+- [x] AuthRepository (interface + impl) calling `/auth/login` + `/auth/me` ✅
+- [x] AuthCubit (Cubit<ApiStatus<UserEntity>>) with checkSession / login / logout ✅
+- [x] go_router with redirect on splash/login/home + refresh from cubit stream ✅
+- [x] SplashPage + LoginForm (shared) + LoginPage per app (prefill dk / aarav) ✅
+- [x] Guru HomePage (3 cards: Chat / Schedule / Sessions) ✅
+- [x] Trainer HomePage (4 tiles: Members / Chats / Requests / Sessions) ✅
+- [x] RoleAppBar with role badge + name + logout ✅
+- [x] Page stubs for every route in both apps' router ✅
+- [x] flutter_bloc + go_router added to shared/pubspec.yaml ✅
+- [x] flutter analyze shared/guru/trainer → No issues ✅
+- [x] flutter test → 12/12 (api_client + auth_cubit unit suites) ✅
+- [x] Live integration smoke (vs real backend): login OK / wrong pw / cold-restart auto-sign-in / logout → 4/4 ✅
+- [x] `feat(auth): AuthCubit + login screens + router [AI]`
+- [ ] **Runtime UI verification on an emulator** — not done; needs an Android/iOS sim session.
+
+## P08–P17 — TBD (filled in as briefs arrive)

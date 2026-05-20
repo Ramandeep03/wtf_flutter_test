@@ -75,4 +75,23 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Beyond brief — barrel hygiene:** `api_state` exports its own `Failure`, which collides with the brief's `models/failures.dart`. Re-exported `package:api_state/api_state.dart` with `hide Failure` so the shared API has one canonical `Failure`.
 - **Beyond brief — `ApiClient` list-endpoint limitation:** brief's signatures return `Map<String,dynamic>`. Our `/users` and `/call-requests?…` return JSON arrays — those calls will throw at `jsonDecode(...) as Map`. Not a P06 problem since the only verified call is `/health`; we'll add a list-aware method (e.g. `getList`) when P07/P08 needs it.
 - **Verified live (2026-05-20):** `flutter analyze` clean across shared/guru_app/trainer_app; `flutter test` 7/7 passing (Hive token round-trip, Failure equality, extensions, ring buffer); separate live smoke test (`test/_health_smoke.dart`, prefixed `_` so it's opt-in) calls `ApiClient.instance.get('/health')` against the running backend and returns `{status: ok, ts: …}`.
-- **Commit:** `feat(flutter): ApiClient + Hive + AppLogger + theme [AI]`
+- **Commit:** `e76a132` — `feat(flutter): ApiClient + Hive + AppLogger + theme [AI]`
+
+### #8 — Flutter auth: UserEntity, AuthRepository, AuthCubit, login screens, router
+- **Tool:** Claude Opus 4.7
+- **Intent:** P07 — wire end-to-end auth: shared `UserEntity` + `AuthRepository(Impl)` calling `/auth/login` & `/auth/me`, shared `AuthCubit`, shared `LoginForm`/`SplashPage`/`RoleAppBar`. Per-app DI, go_router with splash→login→home redirect, per-app `LoginPage` (prefill dk for guru, aarav for trainer), per-app `HomePage` (3 cards / 4 tiles), feature-page stubs for every route, updated `bloc_observer`, updated `main.dart` wiring `BlocProvider.value(authCubit) + MaterialApp.router`. AuthCubit unit tests via `bloc_test` + `mocktail`, plus a live-backend integration smoke covering login OK, wrong-pw, cold-restart auto-sign-in, and logout.
+- **Prompt (≤2 lines):** "P07 — Flutter: AuthCubit + Login Screens + Routing. Wire brief's AuthRepo/Cubit/router/screens; both apps."
+- **Used:** yes
+- **Deviations (significant — see ADR#5):**
+  1. `AuthState` is not the brief's custom class with `ApiStatus` *enum*. It is `typedef AuthState = ApiStatus<UserEntity>;` (sealed class from `api_state` v1.0.0). UI uses `state is ApiLoading`, `state is ApiSuccess`, etc.
+  2. Our domain failures (`AuthFailure`, `NetworkFailure`, `ValidationFailure`, `ServerFailure`) now extend `api_state.Failure` (which carries `message`, `code?`, `stackTrace?`). The local abstract `Failure` was deleted. Barrel re-exports `api_state` *without* `hide Failure` now — one canonical `Failure` for both ApiFailure carriers and domain types.
+  3. Router redirect uses `state is ApiSuccess<UserEntity>` instead of a bool getter, and routes through `/splash` while `state is ApiLoading || ApiInitial`.
+  4. Logout emits `ApiInitial` (not `ApiFailure`) since there's no error to surface; router still redirects to `/login` because `!isAuth`.
+  5. `AuthCubit` + `AuthRepository` live in `shared/lib/` (not per-feature), so both apps depend on the same instance. Added `flutter_bloc`, `bloc`, `go_router`, `bloc_test`, `mocktail` to `shared/pubspec.yaml`.
+  6. `LoginForm` is the shared widget; per-app `LoginPage` is a 3-line wrapper that supplies role-specific prefill + headline. Brief's "same widget, different pre-fill" turned into "extracted widget + 1-line wrappers".
+- **Verified live (2026-05-20):**
+  - `flutter analyze` clean across shared + guru_app + trainer_app.
+  - `flutter test` shared → **12/12** (7 from P06 utilities + 5 new AuthCubit bloc tests covering checkSession-ok, checkSession-no-token, login-success, login-failure, logout).
+  - Live `_auth_live_smoke.dart` against running backend → **4/4** (login DK ok + token persisted, login wrong-pw → ApiFailure(INVALID_LOGIN_CREDENTIALS), Aarav login + new cubit instance + `checkSession()` via stored Hive token → ApiSuccess[Aarav] (auto-sign-in proven), logout → ApiInitial + token cleared).
+- **Not verified by me:** rendering on a real emulator. The visual checks ("home shows DK", "snackbar appears on wrong pw", "RoleAppBar badge") will pass given the cubit/UI plumbing tested, but I didn't boot a simulator. User can `flutter run` in either app to confirm.
+- **Commit:** `feat(auth): AuthCubit + login screens + router [AI]`
