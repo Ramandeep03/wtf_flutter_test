@@ -6,35 +6,66 @@ import 'package:go_router/go_router.dart';
 import '../blocs/auth_cubit.dart';
 import '../blocs/call_bloc.dart';
 import '../blocs/pre_join_cubit.dart';
+import '../models/session_log_draft.dart';
 import '../utils/app_theme.dart';
 import '../utils/snackbar_helper.dart';
+import 'call_view.dart';
 
-/// Shared pre-join screen. Per-app `PreJoinPage` instantiates the cubits
-/// and provides this view inside a `MultiBlocProvider`.
+/// Pre-join + in-call swap-on-phase. Keeping both views inside the same
+/// route preserves the `CallBloc` across the join → in-call transition;
+/// pushReplacement would have destroyed the bloc mid-SDK-handshake.
 class PreJoinView extends StatelessWidget {
   final String role;
   const PreJoinView({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
-    final user = context.read<AuthCubit>().state.userOrNull;
     return BlocConsumer<CallBloc, CallState>(
       listener: (ctx, callState) {
-        switch (callState) {
-          case ApiSuccess():
-            ctx.pushReplacement('/call');
-          case ApiFailure(:final error):
-            SnackbarHelper.showError(ctx, error.message);
+        switch (callState.phase) {
+          case CallPhase.failed when callState.joinedAt == null:
+            if (callState.errorMessage != null) {
+              SnackbarHelper.showError(ctx, callState.errorMessage!);
+            }
+            ctx.pop();
+          case CallPhase.ended || CallPhase.failed:
+            if (callState.joinedAt != null) {
+              final user = ctx.read<AuthCubit>().state.userOrNull;
+              final draft = SessionLogDraft(
+                joinedAt: callState.joinedAt!,
+                endedAt: DateTime.now(),
+                memberId: user?.isMember == true ? user!.uid : user?.assignedTrainerId,
+                trainerId: user?.isTrainer == true ? user!.uid : user?.assignedTrainerId,
+              );
+              ctx.pushReplacement('/post-call', extra: draft);
+            }
           case _:
         }
       },
-      builder: (ctx, callState) => BlocBuilder<PreJoinCubit, PreJoinState>(
-        builder: (ctx, s) => Scaffold(
+      builder: (ctx, callState) {
+        if (callState.phase == CallPhase.inCall ||
+            (callState.phase == CallPhase.joining && callState.joinedAt != null)) {
+          return const CallView();
+        }
+        return _PreJoinScaffold(role: role);
+      },
+    );
+  }
+}
+
+class _PreJoinScaffold extends StatelessWidget {
+  final String role;
+  const _PreJoinScaffold({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.read<AuthCubit>().state.userOrNull;
+    return BlocBuilder<PreJoinCubit, PreJoinState>(
+      builder: (ctx, s) => BlocBuilder<CallBloc, CallState>(
+        builder: (ctx, callState) => Scaffold(
           body: SafeArea(
             child: Column(
               children: [
-                // Camera placeholder — actual local preview lands with the
-                // 100ms SDK plumbing in P13.
                 Expanded(
                   child: Container(
                     color: Colors.black,
@@ -102,7 +133,7 @@ class PreJoinView extends StatelessWidget {
                                       ));
                                 }
                               : null,
-                          child: callState is ApiLoading
+                          child: callState.phase == CallPhase.joining
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
@@ -128,7 +159,8 @@ class PreJoinView extends StatelessWidget {
   }
 
   bool _joinEnabled(PreJoinState s, CallState callState) =>
-      s.loadStatus is ApiSuccess<String> && callState is! ApiLoading;
+      s.loadStatus is ApiSuccess<String> &&
+      callState.phase == CallPhase.idle;
 }
 
 class _DeviceToggle extends StatelessWidget {

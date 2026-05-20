@@ -6,6 +6,7 @@ export 'package:api_state/api_state.dart';
 // Models
 export 'models/call_request_entity.dart';
 export 'models/failures.dart';
+export 'models/session_log_draft.dart';
 export 'models/user_entity.dart';
 
 // Blocs
@@ -21,6 +22,7 @@ export 'services/call_request_repository.dart';
 export 'services/stream_chat_service.dart';
 
 // Widgets
+export 'widgets/call_view.dart';
 export 'widgets/chat_list.dart';
 export 'widgets/conversation.dart';
 export 'widgets/error_retry_widget.dart';

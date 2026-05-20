@@ -164,4 +164,19 @@
 - [ ] **Runtime gap** — `GET /rooms` returns 404 unless a `room_meta` doc has been created via trainer-approve (which itself needs real 100ms creds). End-to-end pre-join can't be validated until those creds drop.
 - [x] `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`
 
-## P13–P17 — TBD (filled in as briefs arrive)
+## P13 — Flutter: CallBloc + In-Call Screen
+- [x] `CallBloc` implements `HMSUpdateListener` — all 14 interface methods stubbed; `onJoin` / `onPeerUpdate` / `onHMSError` / `onReconnecting` / `onReconnected` / `onTrackUpdate` / `onPeerListUpdate` / `onRemovedFromRoom` are wired
+- [x] State: `CallState(phase, peers, isMuted, isVideoOff, joinedAt, errorMessage)` with `CallPhase = idle | joining | inCall | ended | failed`
+- [x] Events: `CallJoinRequested` (fetches `/hms-token?roomId=…&role=…` → `HMSSDK.join`) · `CallEndRequested` · `CallMuteToggled` · `CallVideoToggled` · `CallCameraFlipped` · internal `CallHms*` events fired from listener callbacks
+- [x] `CallView` (shared): full-screen remote `HMSTextureView`, PiP local view, peer-name + live MM:SS timer, reconnecting overlay on `CallPhase.joining` after `joinedAt` is set, 4 controls (mute/video/flip/end)
+- [x] PreJoinView + CallView swap inside one route (preserves `CallBloc` across the join → in-call transition; `pushReplacement` would have destroyed it)
+- [x] On `CallPhase.ended` / `CallPhase.failed` with `joinedAt` set → `pushReplacement('/post-call', extra: SessionLogDraft(...))`
+- [x] `SessionLogDraft` model added (used by post-call in P14)
+- [x] hmssdk_flutter + collection added to shared/pubspec
+- [x] `flutter analyze` shared + both apps → No issues
+- [x] `flutter test` shared 18/18 (12 prior + 6 new CallBloc blocTests: token-failure / connected / reconnecting / reconnected / terminal-failure / non-terminal-failure no-op) ; guru 3/3
+- [ ] **Runtime not verified** — requires real 100ms creds + a real `room_meta` doc created via approve flow. Same blocker chain as P11/P12. Code structurally complete.
+- [ ] Camera icon in chat AppBar (brief: "wire now") — left as no-op for now; looking up the active approved request from inside a stateless AppBar action wants an async repo lookup, will fold into P14.
+- [x] `feat(call): CallBloc + 100ms in-call screen [AI]`
+
+## P14–P17 — TBD (filled in as briefs arrive)

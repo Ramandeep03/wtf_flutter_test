@@ -21,6 +21,8 @@ dependencies:
   go_router: ^13.2.0
   permission_handler: ^11.3.0
   stream_chat_flutter: ^8.0.0
+  hmssdk_flutter: ^1.11.1
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_lints: ^3.0.1

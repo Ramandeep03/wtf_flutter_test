@@ -196,4 +196,22 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   - iOS plist + Podfile changes (brief only listed Android); without them the `permission_handler` runtime calls would silently no-op on iOS.
   - Android gradle file is Kotlin DSL (`build.gradle.kts`) since the scaffold from #14 used the modern template; brief showed legacy Groovy.
 - **Verified:** `flutter analyze` clean on both apps. Not yet `flutter build` against either platform (no SDK / pod install run from here).
-- **Commit:** `chore(platform): call permissions + minSdk/targetSdk in android + ios [AI]`
+- **Commit:** `3b24f39` — `chore(platform): call permissions + minSdk/targetSdk in android + ios [AI]`
+
+### #16 — Flutter CallBloc + in-call screen (100ms)
+- **Tool:** Claude Opus 4.7
+- **Intent:** P13 — replace P12's `CallBloc` stub with a full implementation that fetches `/hms-token`, joins 100ms via `HMSSDK`, listens to `HMSUpdateListener` callbacks, exposes mute / video / flip / end events, and surfaces reconnection. Add `CallView` (shared): remote `HMSTextureView`, local PiP, name + MM:SS timer, reconnecting overlay, 4-button control bar. Add `SessionLogDraft` model for the navigate-to-/post-call payload.
+- **Prompt (≤2 lines):** "P13 — CallBloc + In-Call Screen. Real 100ms hmssdk_flutter wiring, full state machine + tests."
+- **Used:** yes
+- **Deviations from brief:**
+  1. **`CallState` is a class, not `status: ApiStatus` enum.** Used a `CallPhase` enum (`idle | joining | inCall | ended | failed`) because `api_state` has no such enum (ADR#5). Brief's "ApiStatus.loading = connecting or reconnecting" maps to `joining` with `joinedAt != null`; "ApiStatus.error" splits into `ended` (user-initiated) vs `failed` (terminal HMS).
+  2. **`HMSVideoView` → `HMSTextureView(track: peer.videoTrack!)`** — v1.11.1 API takes a track, not a peer. Local PiP uses `local!.videoTrack` with `setMirror: true`.
+  3. **`onError` → `onHMSError`** — actual interface method name in v1.11.1.
+  4. **All 14 `HMSUpdateListener` methods implemented** (brief listed only 9). `onPeerListUpdate`, `onRoleChangeRequest`, `onChangeTrackStateRequest`, `onAudioDeviceChanged` no-op; `onRemovedFromRoom` emits a terminal `CallHmsFailed("Removed from room", isTerminal: true)`.
+  5. **Internal `_HMS_*` events made public (`CallHms*`)** so blocTests can poke them directly without instantiating fake HMSRoom/HMSPeer values (which have many required ctor params).
+  6. **PreJoin → InCall is *not* `pushReplacement`.** Single `/pre-join` route hosts the `CallBloc`; `PreJoinView` swaps to `CallView` when `phase == inCall` (or joining-while-reconnecting). `pushReplacement` would have destroyed the bloc mid-SDK-handshake. `/call` route now just redirects to `/home`.
+  7. **`CallBloc` takes optional `api` + `sdkFactory` ctor params** so tests can mock the token call and avoid real SDK instantiation.
+  8. **Camera-icon-in-AppBar deferred** to P14 — looking up "the active approved request" from inside a stateless AppBar action wants an async repo lookup that doesn't fit the current `_ConvAppBar` shape.
+- **Verified:** `flutter analyze` clean shared + both apps. `flutter test` shared 18/18 (12 prior + 6 new — token-failure / connected / reconnecting / reconnected / terminal-failure / non-terminal-no-op). `flutter test` guru 3/3.
+- **NOT verified:** runtime 100ms join. Requires real HMS_* creds and an approved request that successfully created a `room_meta` doc — gated by P11's approve-flow runtime gap.
+- **Commit:** `feat(call): CallBloc + 100ms in-call screen [AI]`
