@@ -22,6 +22,7 @@ export 'blocs/stream_chat_cubit.dart';
 export 'services/api_client.dart';
 export 'services/auth_repository.dart';
 export 'services/call_request_repository.dart';
+export 'services/notification_service.dart';
 export 'services/session_log_repository.dart';
 export 'services/stream_chat_service.dart';
 

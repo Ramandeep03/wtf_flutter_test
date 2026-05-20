@@ -194,4 +194,20 @@
 - [ ] **Runtime not verified end-to-end** — session-log creation hits the live backend (works against P05's `/session-logs` route), but the upstream flow that produces a `SessionLogDraft` requires the call flow to actually complete, which is still gated on real 100ms creds.
 - [x] `feat(sessions): PostCallCubit + SessionLogsCubit + backend calls [AI]`
 
-## P15–P17 — TBD (filled in as briefs arrive)
+## P15 — Flutter: Local Notifications
+- [x] `NotificationService` (shared): `initialize()` / `show()` / `schedule()` / `cancel()`, timezone via `flutter_timezone`
+- [x] `NotifId` constants (`callApproved` / `callDeclined` / `callReminder` / `newMessage`)
+- [x] `await NotificationService.instance.initialize();` in both `main()` — logs `[NOTIF] initialized`
+- [x] AndroidManifest: `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` / `RECEIVE_BOOT_COMPLETED` / `POST_NOTIFICATIONS`; `ScheduledNotificationReceiver` + boot receiver inside `<application>`
+- [x] `MyRequestsCubit` (guru) is now **diff-aware**: tracks previous list, fires `callApproved` + scheduled `callReminder` (10-min) on pending→approved, and `callDeclined` (with reason) on pending→declined
+- [x] `StreamChatService.connect` subscribes to `EventType.messageNew` → fires `newMessage` notification when own-user mismatched AND app not in foreground
+- [x] Subscription canceled on `disconnect`
+- [x] flutter_local_notifications / timezone / flutter_timezone added to `shared/pubspec.yaml`
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared 24/24 ; guru 3/3
+- [ ] **Runtime not verified** — needs a device / emulator with `flutter run`.
+- [ ] **iOS prompt at startup** — using lazy `DarwinInitializationSettings()`; pass `requestAlertPermission: true` etc. if you want the prompt at boot.
+- [ ] Notification tap deep-linking — currently just logs the payload; P17 work.
+- [x] `feat(notif): local notifications for calls + Stream Chat messages [AI]`
+
+## P16–P17 — TBD (filled in as briefs arrive)

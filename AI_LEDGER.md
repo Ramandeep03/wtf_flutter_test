@@ -229,4 +229,22 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   4. Detail modal — "Rate Now" only shown to members without an existing rating; "Save Notes" shown for trainer always, for member only when expanded.
 - **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 24/24 (18 prior + 3 PostCallCubit create / save / fail + 3 SessionLogsCubit load-sorted / filter-last7 / filter-thisMonth). guru 3/3.
 - **Runtime gap:** session-log POST/PATCH work against the live backend (P05 endpoints are deployed), but producing a `SessionLogDraft` requires a real call to complete — gated on real 100ms creds.
-- **Commit:** `feat(sessions): PostCallCubit + SessionLogsCubit + backend calls [AI]`
+- **Commit:** `f71f600` — `feat(sessions): PostCallCubit + SessionLogsCubit + backend calls [AI]`
+
+### #18 — Flutter local notifications
+- **Tool:** Claude Opus 4.7
+- **Intent:** P15 — `NotificationService` (shared) with initialize/show/schedule/cancel + timezone setup, `NotifId` constants. Wire firing sites: diff-aware `MyRequestsCubit` (guru) for approve/decline + 10-min reminder, `StreamChatService.connect` for incoming chat messages while backgrounded. Android manifest entries (perm + receivers). Init in both `main()`.
+- **Prompt (≤2 lines):** "P15 — Flutter: Local Notifications. NotificationService + diff-aware approve/decline + Stream messageNew while backgrounded."
+- **Used:** yes
+- **Deviations from brief:**
+  1. **`NotificationService` is an instance singleton** (`NotificationService.instance.show(...)`), not a static-only class — keeps the API consistent with `StreamChatService.instance` from P08 and lets tests inject if needed.
+  2. **iOS init uses bare `DarwinInitializationSettings()`** — the platform will lazily prompt for permission on first `show()/schedule()`. Brief did the same; calling out so it's clear we're not requesting at boot.
+  3. **`MyRequestsCubit` made diff-aware** with a private `_previous` list. Brief sketched it inline; pulling it into the cubit means there's one canonical place that fires notifications when statuses transition, regardless of how `load()` was triggered.
+  4. **Foreground check** in `StreamChatService._startMessageNotifications` uses `SchedulerBinding.instance.lifecycleState` (the brief's `WidgetsBinding.lifecycleState` doesn't exist as a property — `WidgetsBinding` does not expose lifecycle directly; it goes through SchedulerBinding).
+  5. **Subscription canceled on disconnect** so logout doesn't leak the event listener.
+  6. **Added `POST_NOTIFICATIONS` permission** (Android 13+) which the brief omitted.
+- **NOT done:**
+  - Notification-tap deep-linking — `onDidReceiveNotificationResponse` logs the payload (`call_join:<id>`) but doesn't navigate. Deferred to P17 (router state + GoRouter parsing).
+- **Verified:** `flutter analyze` clean shared + both apps. `flutter test` shared 24/24 (no notification tests added — would require platform channel mocking that's not worth it for a thin wrapper).
+- **NOT verified live:** needs a real device; flutter_local_notifications is platform-channel heavy.
+- **Commit:** `feat(notif): local notifications for calls + Stream Chat messages [AI]`

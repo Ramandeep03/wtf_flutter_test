@@ -11,6 +11,7 @@ import 'core/router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await HiveInit.initialize();
+  await NotificationService.instance.initialize();
   Bloc.observer = AppBlocObserver();
   runApp(TrainerApp(deps: AppDependencies()));
 }
