@@ -31,9 +31,16 @@
 - [ ] Flutter auth feature in both apps (data/domain/presentation)
 - [ ] Token stored in Hive
 
-## P04 — Users (profiles)
-- [ ] CRUD `/users` (admin-gated where needed)
-- [ ] Profile screens in both apps
+## P04 — Backend: Users + Call Requests
+- [x] `GET /users` → list, 200 ✅
+- [x] `GET /users/:uid` → single, 200 ✅
+- [x] `POST /call-requests` → 201, status=pending ✅
+- [x] Duplicate approved slot → 409 `Slot already booked` ✅
+- [x] `GET /call-requests?memberId=` → filtered list, 200 (composite index deployed) ✅
+- [x] `PATCH /call-requests/:id` status=approved → updated ✅
+- [x] `PATCH /call-requests/:id` status=declined + reason → updated ✅
+- [x] Console logs `[SCHEDULE] created/updated` ✅
+- [x] `feat(backend): users + call-requests CRUD routes [AI]`
 
 ## P05 — Stream Chat integration
 - [ ] `/stream_token` mints user tokens

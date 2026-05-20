@@ -44,4 +44,14 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Used:** yes
 - **Deviation:** Brief lists `node-fetch` as an option for Node <18. We're on Node 24 with `engines >= 20`, so native global `fetch` is used and `node-fetch` is not added to dependencies.
 - **Verified live (2026-05-20):** all 4 acceptance curls pass against the seeded DK account; `[AUTH] login uid=…` logs correctly.
-- **Commit:** `feat(backend): auth login + me routes [AI]`
+- **Commit:** `3e6b7d4` — `feat(backend): auth login + me routes [AI]`
+
+### #5 — Backend users + call-requests routes
+- **Tool:** Claude Opus 4.7
+- **Intent:** P04 — implement `GET /users`, `GET /users/:uid`, and `/call-requests` CRUD (create with conflict check, list with optional memberId/trainerId filter, PATCH status with optional declineReason).
+- **Prompt (≤2 lines):** "P04 — Backend: Users + Call Requests Routes. Replace users.js and call_requests.js stubs with brief verbatim."
+- **Used:** yes
+- **Added beyond brief:** `firestore.indexes.json` with two composite indexes (`memberId+requestedAt DESC`, `trainerId+requestedAt DESC`) and wired into `firebase.json`. The list query (`.orderBy('requestedAt','desc').where('memberId|trainerId','==',…)`) is a single inequality + equality combo that Firestore requires composite indexes for. Caught live (FAILED_PRECONDITION); deployed indexes via `firebase deploy --only firestore:indexes`.
+- **Verified live (2026-05-20):** all 7 acceptance tests pass against DK/Aarav (GET list, GET single, POST create, duplicate slot 409, filtered list, PATCH approve, PATCH decline+reason). Console logs `[SCHEDULE] created id=…` and `[SCHEDULE] updated id=… status=…`.
+- **Test data left in Firestore:** two `call_requests` docs (one approved, one declined) — fine for downstream phases.
+- **Commit:** `feat(backend): users + call-requests CRUD routes [AI]`
