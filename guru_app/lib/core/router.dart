@@ -46,14 +46,15 @@ GoRouter buildRouter(AuthCubit authCubit) => GoRouter(
           'redirect loc=$loc isAuth=$isAuth isLoading=$isLoading onboarded=$isOnboarded',
         );
 
-        if (isLoading) return onSplash ? null : '/splash';
-        if (!isAuth && !onLogin) return '/login';
+        // Onboarding gate runs before auth: a fresh install lands on the
+        // intro slides regardless of session state. Splash is still allowed
+        // so we can show the loading spinner while AuthCubit hydrates.
+        if (!isOnboarded && !onOnboarding && !onSplash) return '/onboarding';
+        if (isOnboarded && onOnboarding) return isAuth ? '/home' : '/login';
 
-        // After auth, gate everything except /onboarding behind the
-        // onboarding flag. New installs see 2 slides + profile setup once.
-        if (isAuth && !isOnboarded && !onOnboarding) return '/onboarding';
-        if (isAuth && isOnboarded && onOnboarding) return '/home';
-        if (isAuth && (onLogin || onSplash) && isOnboarded) return '/home';
+        if (isLoading) return onSplash ? null : '/splash';
+        if (!isAuth && !onLogin && !onOnboarding) return '/login';
+        if (isAuth && (onLogin || onSplash)) return '/home';
         return null;
       },
       routes: [
