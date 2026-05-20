@@ -25,10 +25,8 @@ class _ConversationViewState extends State<ConversationView> {
     super.initState();
     final user = context.read<AuthCubit>().state.userOrNull;
     if (user == null) return;
-    final memberUid  = user.isMember  ? user.uid : user.assignedTrainerId ?? '';
-    final trainerUid = user.isTrainer ? user.uid : user.assignedTrainerId ?? '';
-    _channel = StreamChatService.instance.getOrCreateChannel(memberUid, trainerUid);
-    _channel!.watch();
+    _channel = StreamChatService.instance.channelWithPeer(user);
+    _channel?.watch();
   }
 
   @override

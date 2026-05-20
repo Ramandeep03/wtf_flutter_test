@@ -26,17 +26,17 @@ class HomePage extends StatelessWidget {
               _HomeCard(
                 icon: Icons.chat_bubble_outline,
                 label: 'Chat with Trainer',
-                onTap: () => ctx.go('/chat'),
+                onTap: () => ctx.push('/chat'),
               ),
               _HomeCard(
                 icon: Icons.calendar_today_outlined,
                 label: 'Schedule Call',
-                onTap: () => ctx.go('/scheduler'),
+                onTap: () => ctx.push('/scheduler'),
               ),
               _HomeCard(
                 icon: Icons.history,
                 label: 'My Sessions',
-                onTap: () => ctx.go('/sessions'),
+                onTap: () => ctx.push('/sessions'),
               ),
             ],
           ),
@@ -51,7 +51,8 @@ class _HomeCard extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _HomeCard({required this.icon, required this.label, required this.onTap});
+  const _HomeCard(
+      {required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) => Card(

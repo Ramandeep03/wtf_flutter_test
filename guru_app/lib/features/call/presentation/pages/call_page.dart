@@ -19,7 +19,7 @@ class CallPage extends StatelessWidget {
             const Text('No active call.'),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.go('/home'),
+              onPressed: () => context.push('/home'),
               child: const Text('Back home'),
             ),
           ],

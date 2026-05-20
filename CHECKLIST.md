@@ -128,7 +128,7 @@
 - [x] `generateSlots(date)` 30-min slots between `slotStartHour`/`slotEndHour` (shared)
 - [x] Guru `SchedulerCubit` — form state (date/slot/note/submitStatus) with past-slot / 140-char / no-slot guards
 - [x] Guru `MyRequestsCubit` = `Cubit<ApiStatus<List<CallRequestEntity>>>`
-- [x] Guru `SchedulerPage` — day chips (Today/Tomorrow/+2), 30-min slot wrap (past = greyed, no-tap), 140-char note, submit button → snackbar + `ctx.go('/requests')`
+- [x] Guru `SchedulerPage` — day chips (Today/Tomorrow/+2), 30-min slot wrap (past = greyed, no-tap), 140-char note, submit button → snackbar + `ctx.push('/requests')`
 - [x] Guru `MyRequestsPage` — list with status badge (Pending⏳ / Approved✓ / Declined+reason) + Join Call button when `canJoinCall`
 - [x] Guru router: added `/requests` route
 - [x] Trainer `RequestsBloc` — events Loaded/Approved/Declined, state holds list + `processingIds` set + last error

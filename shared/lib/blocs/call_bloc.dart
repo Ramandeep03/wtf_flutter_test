@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:hmssdk_flutter/hmssdk_flutter.dart';
 
 import '../services/api_client.dart';
+import '../services/call_request_repository.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_mask.dart';
 
@@ -68,18 +69,20 @@ sealed class CallEvent extends Equatable {
 }
 
 class CallJoinRequested extends CallEvent {
+  final String callRequestId;
   final String roomId;
   final String userId;
   final String userName;
-  final String role;
+  final String role; // 'member' | 'trainer'
   const CallJoinRequested({
+    required this.callRequestId,
     required this.roomId,
     required this.userId,
     required this.userName,
     required this.role,
   });
   @override
-  List<Object?> get props => [roomId, userId, userName, role];
+  List<Object?> get props => [callRequestId, roomId, userId, userName, role];
 }
 
 class CallEndRequested  extends CallEvent { const CallEndRequested(); }
@@ -108,13 +111,21 @@ class CallHmsFailed extends CallEvent {
 // ─── Bloc ───
 class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   final ApiClient _api;
+  final CallRequestRepository _callRequests;
   final HMSSDK Function() _sdkFactory;
   HMSSDK? _sdk;
 
+  /// Captured from CallJoinRequested so _onEnd knows which request to
+  /// mark as ended and whether this side is the trainer.
+  String? _callRequestId;
+  String? _role;
+
   CallBloc({
     ApiClient? api,
+    CallRequestRepository? callRequests,
     HMSSDK Function()? sdkFactory,
   })  : _api = api ?? ApiClient.instance,
+        _callRequests = callRequests ?? CallRequestRepository(),
         _sdkFactory = sdkFactory ?? HMSSDK.new,
         super(const CallState()) {
     on<CallJoinRequested>(_onJoin);
@@ -147,6 +158,8 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   }
 
   Future<void> _onJoin(CallJoinRequested e, Emitter<CallState> emit) async {
+    _callRequestId = e.callRequestId;
+    _role = e.role;
     emit(state.copyWith(phase: CallPhase.joining, clearError: true));
     try {
       final data = await _api.get('/hms-token?roomId=${e.roomId}&role=${e.role}');
@@ -167,7 +180,19 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   Future<void> _onEnd(CallEndRequested _, Emitter<CallState> emit) async {
     await _sdk?.leave();
     emit(state.copyWith(phase: CallPhase.ended));
-    AppLogger.i(LogTag.rtc, 'call ended');
+    AppLogger.i(LogTag.rtc, 'call ended (role=$_role)');
+
+    // Only the trainer pressing End Call closes the request for everyone.
+    // A guru leaving just drops them from the room; the trainer can stay.
+    if (_role == 'trainer' && _callRequestId != null) {
+      final res = await _callRequests.end(_callRequestId!);
+      res.fold(
+        (f) => AppLogger.w(LogTag.schedule,
+            'failed to mark call ended: ${f.message}'),
+        (r) => AppLogger.i(LogTag.schedule,
+            'call request ${r.id} marked ended at ${r.endedAt}'),
+      );
+    }
   }
 
   // ─── HMSUpdateListener ───

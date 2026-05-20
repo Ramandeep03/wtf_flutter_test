@@ -22,7 +22,9 @@ class SessionsView extends StatelessWidget {
         builder: (ctx, state) {
           return Column(
             children: [
-              _FilterChips(active: state.filter, onChange: ctx.read<SessionLogsCubit>().setFilter),
+              _FilterChips(
+                  active: state.filter,
+                  onChange: ctx.read<SessionLogsCubit>().setFilter),
               Expanded(child: _body(ctx, state)),
             ],
           );
@@ -59,7 +61,7 @@ class _FilterChips extends StatelessWidget {
   const _FilterChips({required this.active, required this.onChange});
 
   static const _items = [
-    (LogFilter.all,       'All'),
+    (LogFilter.all, 'All'),
     (LogFilter.last7Days, 'Last 7 days'),
     (LogFilter.thisMonth, 'This Month'),
   ];
@@ -100,10 +102,11 @@ class _EmptyState extends StatelessWidget {
             const Text('No sessions yet.', style: AppTypography.body),
             if (showCta) ...[
               const SizedBox(height: AppSpacing.md),
-              const Text('Schedule your first call.', style: AppTypography.bodySmall),
+              const Text('Schedule your first call.',
+                  style: AppTypography.bodySmall),
               const SizedBox(height: AppSpacing.md),
               ElevatedButton(
-                onPressed: () => context.go('/scheduler'),
+                onPressed: () => context.push('/scheduler'),
                 child: const Text('Schedule a call'),
               ),
             ],
@@ -126,7 +129,8 @@ class _SessionLogTile extends StatelessWidget {
         title: Text(log.startedAt.toDateLabel(), style: AppTypography.body),
         subtitle: Text(
           'Duration: ${log.durationSec.toMMSS()}',
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+          style:
+              AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
         ),
         trailing: log.rating == null
             ? const Text('—', style: AppTypography.bodySmall)
@@ -179,7 +183,8 @@ class _SessionLogTile extends StatelessWidget {
 class _DetailContent extends StatefulWidget {
   final SessionLogEntity log;
   final bool isMember;
-  final Future<void> Function({int? rating, String? memberNotes, String? trainerNotes}) onUpdate;
+  final Future<void> Function(
+      {int? rating, String? memberNotes, String? trainerNotes}) onUpdate;
 
   const _DetailContent({
     required this.log,
@@ -200,9 +205,8 @@ class _DetailContentState extends State<_DetailContent> {
   void initState() {
     super.initState();
     _rating = widget.log.rating;
-    final initial = widget.isMember
-        ? widget.log.memberNotes
-        : widget.log.trainerNotes;
+    final initial =
+        widget.isMember ? widget.log.memberNotes : widget.log.trainerNotes;
     _noteCtrl = TextEditingController(text: initial ?? '');
   }
 
@@ -230,7 +234,8 @@ class _DetailContentState extends State<_DetailContent> {
               ),
               Text(
                 'Duration: ${log.durationSec.toMMSS()}',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.bodySmall
+                    .copyWith(color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -295,14 +300,15 @@ class _DetailContentState extends State<_DetailContent> {
               controller: _noteCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: widget.isMember ? 'Edit your note' : 'Edit session notes',
+                labelText:
+                    widget.isMember ? 'Edit your note' : 'Edit session notes',
                 border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             ElevatedButton(
               onPressed: () => widget.onUpdate(
-                memberNotes:  widget.isMember ? _noteCtrl.text.trim() : null,
+                memberNotes: widget.isMember ? _noteCtrl.text.trim() : null,
                 trainerNotes: !widget.isMember ? _noteCtrl.text.trim() : null,
               ),
               child: const Text('Save Notes'),

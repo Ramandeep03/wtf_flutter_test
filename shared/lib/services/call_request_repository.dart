@@ -71,6 +71,21 @@ class CallRequestRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  /// Marks the call as ended (trainer-side action). After this `canJoinCall`
+  /// returns false for both peers — the Join Call button disappears.
+  Future<Either<Failure, CallRequestEntity>> end(String id) async {
+    try {
+      final data = await _api.patch('/call-requests/$id', {
+        'endedAt': DateTime.now().toUtc().toIso8601String(),
+      });
+      return Right(CallRequestEntity.fromJson(data));
+    } on ApiException catch (e) {
+      return Left(ServerFailure(e.message, code: e.statusCode));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
 
 /// Room creation lives on its own minimal repository so it can be swapped

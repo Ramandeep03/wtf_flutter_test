@@ -20,13 +20,21 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
   ApiClient._();
 
-  final _base = AppConstants.backendBaseUrl;
+  // Strip a trailing slash so '${_base}/health' doesn't become '…dev//health'
+  // when the user pastes a base URL like https://….ngrok-free.dev/ .
+  final String _base = AppConstants.backendBaseUrl.endsWith('/')
+      ? AppConstants.backendBaseUrl
+          .substring(0, AppConstants.backendBaseUrl.length - 1)
+      : AppConstants.backendBaseUrl;
 
   String? get _token => Hive.box('app_prefs').get('id_token') as String?;
 
   // No logging in this getter — it would print the raw idToken.
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
+        // Skip the ngrok free-tier "you're about to visit" interstitial.
+        // Harmless to send to non-ngrok backends — they ignore unknown headers.
+        'ngrok-skip-browser-warning': 'true',
         if (_token != null) 'Authorization': 'Bearer $_token',
       };
 

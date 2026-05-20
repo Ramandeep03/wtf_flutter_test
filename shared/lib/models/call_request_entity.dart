@@ -11,6 +11,7 @@ class CallRequestEntity extends Equatable {
   final DateTime requestedAt;
   final DateTime scheduledFor;
   final String? declineReason;
+  final DateTime? endedAt;
 
   const CallRequestEntity({
     required this.id,
@@ -21,6 +22,7 @@ class CallRequestEntity extends Equatable {
     required this.requestedAt,
     required this.scheduledFor,
     this.declineReason,
+    this.endedAt,
   });
 
   factory CallRequestEntity.fromJson(Map<String, dynamic> j) => CallRequestEntity(
@@ -32,20 +34,29 @@ class CallRequestEntity extends Equatable {
         declineReason: j['declineReason'] as String?,
         requestedAt: DateTime.parse(j['requestedAt'] as String),
         scheduledFor: DateTime.parse(j['scheduledFor'] as String),
+        endedAt: j['endedAt'] != null ? DateTime.parse(j['endedAt'] as String) : null,
       );
 
-  bool get isPending  => status == 'pending';
-  bool get isApproved => status == 'approved';
-  bool get isDeclined => status == 'declined';
+  bool get isPending   => status == 'pending';
+  bool get isApproved  => status == 'approved';
+  bool get isDeclined  => status == 'declined';
   bool get isCancelled => status == 'cancelled';
 
+  /// Trainer has ended the call — neither side can rejoin.
+  bool get isEnded => endedAt != null;
+
   @override
-  List<Object?> get props =>
-      [id, memberId, trainerId, note, status, requestedAt, scheduledFor, declineReason];
+  List<Object?> get props => [
+        id, memberId, trainerId, note, status,
+        requestedAt, scheduledFor, declineReason, endedAt,
+      ];
 }
 
+/// Show "Join Call" iff the request is approved, the trainer hasn't ended
+/// it, and we're within the join window (10 min before scheduledFor → on).
 bool canJoinCall(CallRequestEntity r) =>
     r.isApproved &&
+    !r.isEnded &&
     DateTime.now().isAfter(
       r.scheduledFor.subtract(Duration(minutes: AppConstants.joinCallWindowMinutes)),
     );

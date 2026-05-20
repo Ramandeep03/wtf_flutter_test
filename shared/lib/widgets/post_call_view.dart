@@ -21,9 +21,10 @@ class PostCallView extends StatelessWidget {
         switch (state.phase) {
           case PostCallPhase.saved:
             SnackbarHelper.showSuccess(ctx, 'Session saved to your logs.');
-            ctx.go('/sessions');
+            ctx.push('/sessions');
           case PostCallPhase.failed:
-            SnackbarHelper.showError(ctx, state.error ?? 'Could not save session');
+            SnackbarHelper.showError(
+                ctx, state.error ?? 'Could not save session');
           case _:
         }
       },
@@ -32,10 +33,9 @@ class PostCallView extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: switch (state.phase) {
-              PostCallPhase.creating => const Center(child: CircularProgressIndicator()),
-              _ => isMember
-                  ? const _MemberSheet()
-                  : const _TrainerSheet(),
+              PostCallPhase.creating =>
+                const Center(child: CircularProgressIndicator()),
+              _ => isMember ? const _MemberSheet() : const _TrainerSheet(),
             },
           ),
         ),
@@ -83,7 +83,7 @@ class _MemberSheet extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () => context.go('/sessions'),
+              onPressed: () => context.push('/sessions'),
               child: const Text('Skip'),
             ),
           ],
@@ -110,7 +110,8 @@ class _TrainerSheet extends StatelessWidget {
             if (state.log != null)
               Text(
                 'Duration: ${state.log!.durationSec.toMMSS()}',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                style:
+                    AppTypography.body.copyWith(color: AppColors.textSecondary),
               ),
             const SizedBox(height: AppSpacing.lg),
             TextField(

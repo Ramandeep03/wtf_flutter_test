@@ -24,10 +24,22 @@ class HomePage extends StatelessWidget {
             crossAxisSpacing: AppSpacing.md,
             mainAxisSpacing: AppSpacing.md,
             children: [
-              _Tile(icon: Icons.people_outline, label: 'Members',  onTap: () => ctx.go('/members')),
-              _Tile(icon: Icons.chat_bubble_outline, label: 'Chats',   onTap: () => ctx.go('/chat')),
-              _Tile(icon: Icons.event_available,  label: 'Requests', onTap: () => ctx.go('/requests')),
-              _Tile(icon: Icons.history,          label: 'Sessions', onTap: () => ctx.go('/sessions')),
+              _Tile(
+                  icon: Icons.people_outline,
+                  label: 'Members',
+                  onTap: () => ctx.push('/members')),
+              _Tile(
+                  icon: Icons.chat_bubble_outline,
+                  label: 'Chats',
+                  onTap: () => ctx.push('/chat')),
+              _Tile(
+                  icon: Icons.event_available,
+                  label: 'Requests',
+                  onTap: () => ctx.push('/requests')),
+              _Tile(
+                  icon: Icons.history,
+                  label: 'Sessions',
+                  onTap: () => ctx.push('/sessions')),
             ],
           ),
         );

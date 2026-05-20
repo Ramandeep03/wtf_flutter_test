@@ -43,7 +43,7 @@ class _SchedulerView extends StatelessWidget {
               'Call requested. Waiting for trainer approval.',
             );
             ctx.read<SchedulerCubit>().acknowledgeSubmitResult();
-            ctx.go('/requests');
+            ctx.push('/requests');
           case ApiFailure(:final error):
             SnackbarHelper.showError(ctx, error.message);
             ctx.read<SchedulerCubit>().acknowledgeSubmitResult();
@@ -70,7 +70,8 @@ class _SchedulerView extends StatelessWidget {
                 Row(
                   children: dates
                       .map((d) => Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            padding:
+                                const EdgeInsets.only(right: AppSpacing.sm),
                             child: _DayChip(
                               date: d,
                               selected: d.isSameDay(state.selectedDate),
@@ -136,7 +137,8 @@ class _DayChip extends StatelessWidget {
   final DateTime date;
   final bool selected;
   final VoidCallback onTap;
-  const _DayChip({required this.date, required this.selected, required this.onTap});
+  const _DayChip(
+      {required this.date, required this.selected, required this.onTap});
 
   String _label() {
     final today = DateTime.now();
@@ -154,13 +156,15 @@ class _DayChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.guruPrimary),
         ),
-        child: Text(_label(), style: AppTypography.bodySmall.copyWith(color: fg)),
+        child:
+            Text(_label(), style: AppTypography.bodySmall.copyWith(color: fg)),
       ),
     );
   }
@@ -196,7 +200,8 @@ class _SlotChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
@@ -204,7 +209,8 @@ class _SlotChip extends StatelessWidget {
             color: disabled ? AppColors.borderLight : AppColors.guruPrimary,
           ),
         ),
-        child: Text(time.toSlotLabel(), style: AppTypography.bodySmall.copyWith(color: fg)),
+        child: Text(time.toSlotLabel(),
+            style: AppTypography.bodySmall.copyWith(color: fg)),
       ),
     );
   }

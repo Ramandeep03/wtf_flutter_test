@@ -12,10 +12,12 @@ class ChatListPage extends StatelessWidget {
       listener: (ctx, _) async {
         final user = ctx.read<AuthCubit>().state.userOrNull;
         if (user == null) return;
-        final channel = StreamChatService.instance.getOrCreateChannel(
-          user.isMember ? user.uid : user.assignedTrainerId ?? '',
-          user.isTrainer ? user.uid : user.assignedTrainerId ?? '',
-        );
+        // Member side creates the channel initially; trainer just discovers
+        // existing channels via the StreamChannelListView filter, so no
+        // pre-watch needed here.
+        if (!user.isMember) return;
+        final channel = StreamChatService.instance.channelWithPeer(user);
+        if (channel == null) return;
         await channel.watch();
         logChannelWatched(channel);
       },

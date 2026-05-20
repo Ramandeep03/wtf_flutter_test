@@ -23,6 +23,17 @@ class StreamChatService {
 
   bool _connected = false;
   StreamSubscription<Event>? _msgSub;
+
+  /// The peer for 1:1 chat — resolved at connect time.
+  ///
+  /// - member side: `user.assignedTrainerId` (the trainer's uid)
+  /// - trainer side: first user with `assignedTrainerId == self.uid`
+  ///
+  /// Necessary because trainers don't have `assignedTrainerId` populated,
+  /// so we can't derive the peer from `UserEntity` alone.
+  String? _peerUid;
+  String? get peerUid => _peerUid;
+
   bool get isConnected => _connected;
 
   Future<void> connect(UserEntity user) async {
@@ -37,12 +48,37 @@ class StreamChatService {
         }),
         token,
       );
+      await _resolvePeer(user);
       _connected = true;
       _startMessageNotifications();
-      AppLogger.i(LogTag.chat, 'connected uid=${LogMask.uid(user.uid)}');
+      AppLogger.i(
+        LogTag.chat,
+        'connected uid=${LogMask.uid(user.uid)} peer=${LogMask.uid(_peerUid)}',
+      );
     } catch (e) {
       AppLogger.e(LogTag.chat, 'connect error', e);
       rethrow;
+    }
+  }
+
+  Future<void> _resolvePeer(UserEntity user) async {
+    if (user.isMember) {
+      _peerUid = user.assignedTrainerId;
+      return;
+    }
+    // Trainer: find the first member assigned to us.
+    try {
+      final users = await ApiClient.instance.getList('/users');
+      for (final raw in users) {
+        final m = raw as Map<String, dynamic>;
+        if (m['role'] == 'member' && m['assignedTrainerId'] == user.uid) {
+          _peerUid = (m['uid'] ?? m['id']) as String?;
+          return;
+        }
+      }
+      AppLogger.w(LogTag.chat, 'no member assigned to trainer uid=${LogMask.uid(user.uid)}');
+    } catch (e) {
+      AppLogger.w(LogTag.chat, 'peer lookup failed: $e');
     }
   }
 
@@ -69,6 +105,7 @@ class StreamChatService {
     if (!_connected) return;
     await _msgSub?.cancel();
     _msgSub = null;
+    _peerUid = null;
     await client.disconnectUser();
     _connected = false;
     AppLogger.i(LogTag.chat, 'disconnected');
@@ -83,6 +120,17 @@ class StreamChatService {
       extraData: {
         'members': [memberUid, trainerUid],
       },
+    );
+  }
+
+  /// Convenience: build the 1:1 channel between the connected user and
+  /// their resolved peer. Returns `null` if the peer hasn't been resolved.
+  Channel? channelWithPeer(UserEntity me) {
+    final peer = _peerUid;
+    if (peer == null || peer.isEmpty) return null;
+    return getOrCreateChannel(
+      me.isMember ? me.uid : peer,
+      me.isTrainer ? me.uid : peer,
     );
   }
 }
