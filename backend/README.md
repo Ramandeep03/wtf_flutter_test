@@ -22,17 +22,33 @@ firebase use --add            # pick the wtf-fitness project
 firebase deploy --only firestore:rules
 ```
 
-## Endpoints
+## API reference
 
-| Method | Path | Phase |
-|--------|------|-------|
-| GET    | `/health`         | P02 (live) |
-| ANY    | `/auth/*`         | P03 (501 stub) |
-| ANY    | `/users/*`        | P04 (501 stub) |
-| ANY    | `/call-requests/*`| P07 (501 stub) |
-| ANY    | `/session-logs/*` | P08 (501 stub) |
-| ANY    | `/rooms/*`        | P06 (501 stub) |
-| ANY    | `/hms-token/*`    | P06 (501 stub) |
-| ANY    | `/stream-token/*` | P05 (501 stub) |
+All routes except `/health` and `POST /auth/login` require
+`Authorization: Bearer <Firebase ID token>` (middleware attaches `req.uid`).
 
-Auth middleware (`src/middleware/auth.js`) verifies `Authorization: Bearer <Firebase ID token>` and attaches `req.uid` on protected routes (wired in P03+).
+```
+GET    /health                        → { status, ts }
+
+POST   /auth/login                    { email, password } → { idToken, refreshToken, user }
+GET    /auth/me                       → user profile
+
+GET    /users                         → all users
+GET    /users/:uid                    → one user
+
+POST   /call-requests                 { memberId, trainerId, note, scheduledFor }
+GET    /call-requests?memberId=&trainerId=   → filtered list (orderBy requestedAt DESC)
+PATCH  /call-requests/:id             { status, declineReason? }
+
+POST   /session-logs                  { memberId, trainerId, startedAt, endedAt, durationSec }
+GET    /session-logs?userId=          → user's logs (member + trainer, deduped, sorted)
+PATCH  /session-logs/:id              { rating?, memberNotes?, trainerNotes? }
+
+POST   /rooms                         { callRequestId, name? } → room_meta
+GET    /rooms?callRequestId=          → room_meta
+
+GET    /hms-token?roomId=&role=       → { token }   (100ms app token, 1h)
+GET    /stream-token                  → { token }   (Stream Chat user token)
+```
+
+Server logs (greppable): `[AUTH]`, `[SCHEDULE]`, `[RTC]`, `[CHAT]`.

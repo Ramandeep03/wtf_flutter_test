@@ -54,4 +54,14 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
 - **Added beyond brief:** `firestore.indexes.json` with two composite indexes (`memberId+requestedAt DESC`, `trainerId+requestedAt DESC`) and wired into `firebase.json`. The list query (`.orderBy('requestedAt','desc').where('memberId|trainerId','==',…)`) is a single inequality + equality combo that Firestore requires composite indexes for. Caught live (FAILED_PRECONDITION); deployed indexes via `firebase deploy --only firestore:indexes`.
 - **Verified live (2026-05-20):** all 7 acceptance tests pass against DK/Aarav (GET list, GET single, POST create, duplicate slot 409, filtered list, PATCH approve, PATCH decline+reason). Console logs `[SCHEDULE] created id=…` and `[SCHEDULE] updated id=… status=…`.
 - **Test data left in Firestore:** two `call_requests` docs (one approved, one declined) — fine for downstream phases.
-- **Commit:** `feat(backend): users + call-requests CRUD routes [AI]`
+- **Commit:** `a5751a2` — `feat(backend): users + call-requests CRUD routes [AI]`
+
+### #6 — Backend session-logs + rooms + 100ms/Stream tokens
+- **Tool:** Claude Opus 4.7
+- **Intent:** P05 — implement `/session-logs` CRUD (POST/GET-by-userId with member|trainer union and dedupe/PATCH), `/rooms` (POST → 100ms REST + save room_meta; GET by callRequestId), `/hms-token` (local JWT signed with HMS_APP_SECRET), `/stream-token` (Stream Chat user token). Add `services/hms.js`, deploy session_logs composite indexes, append full API reference to backend README.
+- **Prompt (≤2 lines):** "P05 — Backend: Session Logs + Room Meta + 100ms + Stream Chat Routes. Replace 4 route stubs + hms.js verbatim from brief."
+- **Used:** yes
+- **Added beyond brief:** two more composite indexes (`session_logs.memberId+startedAt DESC`, `trainerId+startedAt DESC`) appended to `firestore.indexes.json` and deployed; new "API reference" section in `backend/README.md` replacing the old phase-status table.
+- **Verified live (2026-05-20):** session-logs POST/GET (member side + trainer side, after index build)/PATCH all green. /hms-token returns a JWT decoding to {user_id, role, room_id, type:app, version:2, access_key, iat, nbf, exp, jti}. /stream-token returns a JWT with user_id claim.
+- **NOT live-verified:** `POST /rooms` — placeholder `HMS_APP_ACCESS_KEY/SECRET/TEMPLATE_ID` in .env make 100ms reject the management token with 500 "Token validation error". Code matches brief; re-test once real 100ms creds are dropped. Same caveat applies to the *usability* of /hms-token and /stream-token tokens by real services (they sign locally regardless of cred validity).
+- **Commit:** `feat(backend): session-logs + rooms + tokens routes [AI]`

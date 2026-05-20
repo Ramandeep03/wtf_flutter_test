@@ -42,32 +42,19 @@
 - [x] Console logs `[SCHEDULE] created/updated` ✅
 - [x] `feat(backend): users + call-requests CRUD routes [AI]`
 
-## P05 — Stream Chat integration
-- [ ] `/stream_token` mints user tokens
-- [ ] `stream_chat_flutter` wired into both apps
+## P05 — Backend: Session Logs + Room Meta + 100ms + Stream Chat Routes
+- [x] `POST /session-logs` → 201, doc in Firestore ✅
+- [x] `GET /session-logs?userId=` returns logs for member side ✅
+- [x] `GET /session-logs?userId=` returns logs for trainer side ✅
+- [x] `PATCH /session-logs/:id` updates rating + memberNotes + trainerNotes ✅
+- [x] `GET /hms-token?roomId=&role=` returns structurally valid JWT (all claims: user_id, role, room_id, type=app, version=2, iat/nbf/exp/jti) ✅
+- [x] `GET /stream-token` returns Stream Chat JWT (user_id claim) ✅
+- [x] `POST /rooms` code wired; ❌ live call to api.100ms.live fails with placeholder HMS_* creds (expected). Re-test after dropping real 100ms keys.
+- [x] Composite indexes for session_logs (memberId+startedAt, trainerId+startedAt) deployed
+- [x] backend/README.md updated with full API reference
+- [x] `feat(backend): session-logs + rooms + tokens routes [AI]`
 
-## P06 — 100ms calls
-- [ ] `/rooms` create
-- [ ] `/hms_token` mint
-- [ ] Call feature in both apps
+## P06 — Flutter: ApiClient + Hive + Constants
+- [ ] (next phase)
 
-## P07 — Call requests (trainer ↔ guru)
-- [ ] `/call_requests` CRUD
-- [ ] Requests feature in trainer_app, scheduler in guru_app
-
-## P08 — Session logs
-- [ ] `/session_logs` create/list
-- [ ] Sessions feature in both apps
-
-## P09 — Local notifications
-- [ ] Session reminders scheduled
-- [ ] Permission flow
-
-## P10 — Theme + shared widgets
-## P11 — Routing (go_router)
-## P12 — Hive offline cache
-## P13 — Error handling + logger
-## P14 — Tests (bloc_test + mocktail)
-## P15 — Lints + CI
-## P16 — Build & sign
-## P17 — Demo link + final docs
+## P07–P17 — TBD (filled in as briefs arrive)

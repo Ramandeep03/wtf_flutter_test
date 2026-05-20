@@ -1,6 +1,19 @@
-const router = require('express').Router();
+const express = require('express');
+const { StreamChat } = require('stream-chat');
+const { verifyToken } = require('../middleware/auth');
 
-// Implemented in a later phase. See CHECKLIST.md.
-router.all('/', (_req, res) => res.status(501).json({ error: 'stream_token_not_implemented' }));
+const router = express.Router();
+router.use(verifyToken);
+
+// GET /stream-token
+router.get('/', (req, res) => {
+  const client = StreamChat.getInstance(
+    process.env.STREAM_API_KEY,
+    process.env.STREAM_API_SECRET
+  );
+  const token = client.createToken(req.uid);
+  console.log(`[CHAT] stream token issued uid=${req.uid}`);
+  res.json({ token });
+});
 
 module.exports = router;
