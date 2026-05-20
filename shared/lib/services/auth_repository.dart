@@ -3,6 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import '../models/failures.dart';
 import '../models/user_entity.dart';
 import '../utils/app_logger.dart';
+import '../utils/log_mask.dart';
 import 'api_client.dart';
 
 abstract class AuthRepository {
@@ -24,13 +25,14 @@ class AuthRepositoryImpl implements AuthRepository {
       });
       await ApiClient.saveToken(data['idToken'] as String);
       final user = UserEntity.fromJson(data['user'] as Map<String, dynamic>);
-      AppLogger.log(LogTag.auth, 'login ok uid=${user.uid}');
+      AppLogger.i(LogTag.auth,
+          'login ok uid=${LogMask.uid(user.uid)} email=${LogMask.email(user.email)}');
       return Right(user);
     } on ApiException catch (e) {
-      AppLogger.log(LogTag.auth, 'login failed: ${e.message}');
+      AppLogger.w(LogTag.auth, 'login failed: ${e.message}');
       return Left(AuthFailure(e.message, code: e.statusCode));
     } catch (e) {
-      AppLogger.log(LogTag.auth, 'login error: $e');
+      AppLogger.e(LogTag.auth, 'login error', e);
       return Left(AuthFailure(e.toString()));
     }
   }
@@ -54,7 +56,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<AuthFailure, Unit>> logout() async {
     await ApiClient.clearToken();
-    AppLogger.log(LogTag.auth, 'logout');
+    AppLogger.i(LogTag.auth, 'logout');
     return const Right(unit);
   }
 }

@@ -201,5 +201,5 @@ class _EmptyChat extends StatelessWidget {
 
 /// Used by ChatListView to log the watched channel id once it appears.
 void logChannelWatched(Channel channel) {
-  AppLogger.log(LogTag.chat, 'channel watching id=${channel.id}');
+  AppLogger.i(LogTag.chat, 'channel watching id=${channel.id}');
 }

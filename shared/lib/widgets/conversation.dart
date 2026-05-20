@@ -176,5 +176,5 @@ Future<void> sendSystemMessage({
   await channel.sendMessage(
     Message(text: text, extraData: const {'isSystem': true}),
   );
-  AppLogger.log(LogTag.chat, 'system msg sent: $text');
+  AppLogger.i(LogTag.chat, 'system msg sent: $text');
 }

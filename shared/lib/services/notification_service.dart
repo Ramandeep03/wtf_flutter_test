@@ -40,7 +40,7 @@ class NotificationService {
       final tzName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(tzName));
     } catch (e) {
-      AppLogger.log(LogTag.notif, 'tz lookup failed, falling back to UTC: $e');
+      AppLogger.i(LogTag.notif, 'tz lookup failed, falling back to UTC: $e');
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
@@ -50,12 +50,12 @@ class NotificationService {
         iOS: DarwinInitializationSettings(),
       ),
       onDidReceiveNotificationResponse: (r) {
-        AppLogger.log(LogTag.notif, 'tapped payload=${r.payload}');
+        AppLogger.i(LogTag.notif, 'tapped payload=${r.payload}');
         // TODO P17: deep-link via payload (e.g. call_join:<id> → /pre-join).
       },
     );
     _ready = true;
-    AppLogger.log(LogTag.notif, 'initialized');
+    AppLogger.i(LogTag.notif, 'initialized');
   }
 
   Future<void> show({
@@ -65,7 +65,7 @@ class NotificationService {
     String? payload,
   }) async {
     await _plugin.show(id, title, body, _details, payload: payload);
-    AppLogger.log(LogTag.notif, 'shown: $title');
+    AppLogger.i(LogTag.notif, 'shown: $title');
   }
 
   Future<void> schedule({
@@ -87,11 +87,11 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
-    AppLogger.log(LogTag.notif, 'scheduled at $scheduledAt: $title');
+    AppLogger.i(LogTag.notif, 'scheduled at $scheduledAt: $title');
   }
 
   Future<void> cancel(int id) async {
     await _plugin.cancel(id);
-    AppLogger.log(LogTag.notif, 'cancelled id=$id');
+    AppLogger.i(LogTag.notif, 'cancelled id=$id');
   }
 }

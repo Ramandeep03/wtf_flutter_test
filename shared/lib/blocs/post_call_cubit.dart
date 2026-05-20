@@ -82,7 +82,7 @@ class PostCallCubit extends Cubit<PostCallState> {
     res.fold(
       (f) => emit(state.copyWith(phase: PostCallPhase.failed, error: f.message)),
       (log) {
-        AppLogger.log(LogTag.rtc, 'session log created id=${log.id}');
+        AppLogger.i(LogTag.rtc, 'session log created id=${log.id}');
         emit(state.copyWith(phase: PostCallPhase.ready, log: log));
       },
     );
@@ -105,7 +105,7 @@ class PostCallCubit extends Cubit<PostCallState> {
     res.fold(
       (f) => emit(state.copyWith(phase: PostCallPhase.failed, error: f.message)),
       (updated) {
-        AppLogger.log(LogTag.rtc, 'session log saved id=${updated.id}');
+        AppLogger.i(LogTag.rtc, 'session log saved id=${updated.id}');
         emit(state.copyWith(phase: PostCallPhase.saved, log: updated));
       },
     );

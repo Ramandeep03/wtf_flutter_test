@@ -210,4 +210,21 @@
 - [ ] Notification tap deep-linking — currently just logs the payload; P17 work.
 - [x] `feat(notif): local notifications for calls + Stream Chat messages [AI]`
 
-## P16–P17 — TBD (filled in as briefs arrive)
+## P16 — Debug Logging + Sensitive Data Masking
+- [x] `LogMask` (shared/utils/log_mask.dart) — `token` / `uid` / `secret` / `email` / `url`
+- [x] `AppLogger` switched to `logger ^2.4.0` with PrettyPrinter + emojis + colors; new methods `i / w / e / t` (`log` kept as `@Deprecated` alias to keep the old test green)
+- [x] `LogTag` extended with `nav` and `api`
+- [x] `ApiClient` logs every request via `LogMask.url(method, path)`; `_handle` logs failures as `HTTP <code> <masked> — <msg>`
+- [x] `ApiClient.saveToken` / `clearToken` log via `LogMask.token`; `_headers` getter logs nothing
+- [x] `AuthRepository.login` masks `uid` + `email`
+- [x] `StreamChatService.connect` masks `uid`
+- [x] `CallBloc._onJoin` masks hms-token + caller uid
+- [x] Backend `index.js` request middleware masks `Authorization` header (`Bearer ****xxxx`)
+- [x] Backend `auth.js` / `hms_token.js` / `stream_token.js` mask `uid` to `xxx***xxx`
+- [x] All 31 `AppLogger.log(...)` call sites migrated to `.i/.w/.e/.t` (test file kept on `log()` to exercise the deprecated alias)
+- [x] Codebase grep for `token=$/idToken=$/password=$/uid=${...}` in log strings → zero hits
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared 29/29 (24 prior + 5 LogMask)
+- [x] `feat(logging): AppLogger + LogMask sensitive data masking [AI]`
+
+## P17 — TBD (filled in as briefs arrive)

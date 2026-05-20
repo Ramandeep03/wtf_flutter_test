@@ -55,7 +55,7 @@ class PreJoinCubit extends Cubit<PreJoinState> {
     try {
       final data = await _api.get('/rooms?callRequestId=$callRequestId');
       final roomId = data['hmsRoomId'] as String;
-      AppLogger.log(LogTag.rtc, 'room loaded: $roomId');
+      AppLogger.i(LogTag.rtc, 'room loaded: $roomId');
       emit(state.copyWith(loadStatus: ApiSuccess(roomId)));
     } on ApiException catch (e) {
       emit(state.copyWith(

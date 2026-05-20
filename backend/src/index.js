@@ -8,6 +8,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request logger — masks Authorization header so the raw idToken
+// never lands in stdout / log files.
+app.use((req, _res, next) => {
+  const h = req.headers.authorization;
+  const auth = h ? `Bearer ****${h.slice(-4)}` : 'none';
+  console.log(`[API] ${req.method} ${req.path} auth=${auth}`);
+  next();
+});
+
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 // Route stubs (real handlers added per part — see CHECKLIST.md)

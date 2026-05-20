@@ -5,15 +5,15 @@ class AppBlocObserver extends BlocObserver {
   @override
   void onChange(BlocBase bloc, Change change) {
     super.onChange(bloc, change);
-    AppLogger.log(
-      LogTag.auth,
+    AppLogger.t(
+      LogTag.nav,
       '[${bloc.runtimeType}] ${change.currentState.runtimeType}→${change.nextState.runtimeType}',
     );
   }
 
   @override
   void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
-    AppLogger.log(LogTag.auth, '[${bloc.runtimeType}] ERROR: $error');
+    AppLogger.e(LogTag.nav, '[${bloc.runtimeType}] error', error, stackTrace);
     super.onError(bloc, error, stackTrace);
   }
 }

@@ -46,5 +46,6 @@ export 'utils/base_state.dart';
 export 'utils/call_permissions.dart';
 export 'utils/constants.dart';
 export 'utils/extensions.dart';
+export 'utils/log_mask.dart';
 export 'utils/slots.dart';
 export 'utils/snackbar_helper.dart';

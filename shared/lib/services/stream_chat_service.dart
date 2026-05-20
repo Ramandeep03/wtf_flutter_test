@@ -6,6 +6,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 import '../models/user_entity.dart';
 import '../utils/app_logger.dart';
 import '../utils/constants.dart';
+import '../utils/log_mask.dart';
 import 'api_client.dart';
 import 'notification_service.dart';
 
@@ -38,9 +39,9 @@ class StreamChatService {
       );
       _connected = true;
       _startMessageNotifications();
-      AppLogger.log(LogTag.chat, 'Stream connected uid=${user.uid}');
+      AppLogger.i(LogTag.chat, 'connected uid=${LogMask.uid(user.uid)}');
     } catch (e) {
-      AppLogger.log(LogTag.chat, 'Stream connect error: $e');
+      AppLogger.e(LogTag.chat, 'connect error', e);
       rethrow;
     }
   }
@@ -70,7 +71,7 @@ class StreamChatService {
     _msgSub = null;
     await client.disconnectUser();
     _connected = false;
-    AppLogger.log(LogTag.chat, 'Stream disconnected');
+    AppLogger.i(LogTag.chat, 'disconnected');
   }
 
   /// Deterministic 1:1 channel id (sorted UIDs avoid order-dependent dupes).

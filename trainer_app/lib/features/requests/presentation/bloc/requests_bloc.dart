@@ -96,7 +96,7 @@ class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
     final roomRes = await _rooms.create(e.request.id);
     if (roomRes.isLeft()) {
       final fail = roomRes.fold((f) => f, (_) => null)!;
-      AppLogger.log(LogTag.schedule, 'approve failed at /rooms: ${fail.message}');
+      AppLogger.w(LogTag.schedule, 'approve failed at /rooms: ${fail.message}');
       emit(state.copyWith(
         processingIds: {...state.processingIds}..remove(e.request.id),
         lastError: 'Could not create call room: ${fail.message}',
@@ -126,7 +126,7 @@ class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
             '${e.request.scheduledFor.toDateLabel()}.',
       );
     } catch (err) {
-      AppLogger.log(LogTag.chat, 'system msg failed (approve): $err');
+      AppLogger.w(LogTag.chat, 'system msg failed (approve): $err');
     }
 
     // 4) Local notification to DK lives in P14 (cross-app push not in scope).
@@ -165,7 +165,7 @@ class RequestsBloc extends Bloc<RequestsEvent, RequestsState> {
         text: 'Call request declined. Reason: ${e.reason}',
       );
     } catch (err) {
-      AppLogger.log(LogTag.chat, 'system msg failed (decline): $err');
+      AppLogger.w(LogTag.chat, 'system msg failed (decline): $err');
     }
 
     emit(state.copyWith(

@@ -247,4 +247,18 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   - Notification-tap deep-linking — `onDidReceiveNotificationResponse` logs the payload (`call_join:<id>`) but doesn't navigate. Deferred to P17 (router state + GoRouter parsing).
 - **Verified:** `flutter analyze` clean shared + both apps. `flutter test` shared 24/24 (no notification tests added — would require platform channel mocking that's not worth it for a thin wrapper).
 - **NOT verified live:** needs a real device; flutter_local_notifications is platform-channel heavy.
-- **Commit:** `feat(notif): local notifications for calls + Stream Chat messages [AI]`
+- **Commit:** `c4ed433` — `feat(notif): local notifications for calls + Stream Chat messages [AI]`
+
+### #19 — AppLogger + LogMask sensitive-data masking
+- **Tool:** Claude Opus 4.7
+- **Intent:** P16 — pretty `AppLogger` via the `logger` package (`.i / .w / .e / .t`), `LogMask` helpers (`token` / `uid` / `secret` / `email` / `url`), and apply masking at every call site that touches sensitive values. Backend request-logger middleware masking the `Authorization` header. Audit the codebase for raw tokens / passwords in log strings.
+- **Prompt (≤2 lines):** "P16 — Debug Logging + Sensitive Data Masking. AppLogger uses logger pkg, mask uid/token/email everywhere, never log Authorization header."
+- **Used:** yes
+- **Deviations from brief:**
+  1. **`AppLogger.log()` kept as `@Deprecated` alias** for `.i()` so the pre-existing 20-entry ring-buffer test (`api_client_test.dart`) doesn't break, and to avoid touching 31 call sites in a single commit.
+  2. **All 31 call sites migrated** anyway by bulk-sed: routine logs → `.i`, warnings → `.w`, errors → `.e`, low-level traces (BlocObserver, API request paths) → `.t`. Tags `auth` callers that were really lifecycle/nav went to the new `LogTag.nav`.
+  3. **Backend uid masking** in `auth.js` / `hms_token.js` / `stream_token.js` — brief covered only the request middleware; I extended to every route that interpolated `uid` in `console.log`.
+  4. **`ApiClient._headers` audited** — brief said "no logging here", code already had none; added a comment to make the no-log policy load-bearing.
+- **Codebase grep:** zero matches for `token=$`, `idToken=$`, `password=$`, `uid=${user.uid}` (without mask) in log strings across `shared/lib`, `guru_app/lib`, `trainer_app/lib`, `backend/src`.
+- **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 29/29 (24 prior + 5 new `LogMask` unit tests covering token / uid / email / secret / url helpers).
+- **Commit:** `feat(logging): AppLogger + LogMask sensitive data masking [AI]`

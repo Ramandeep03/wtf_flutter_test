@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
     process.env.STREAM_API_SECRET
   );
   const token = client.createToken(req.uid);
-  console.log(`[CHAT] stream token issued uid=${req.uid}`);
+  console.log(`[CHAT] stream token issued uid=${req.uid.slice(0, 3)}***${req.uid.slice(-3)}`);
   res.json({ token });
 });
 

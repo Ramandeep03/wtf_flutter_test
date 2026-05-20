@@ -4,6 +4,7 @@ import 'package:hmssdk_flutter/hmssdk_flutter.dart';
 
 import '../services/api_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/log_mask.dart';
 
 // ─── Phases ───
 enum CallPhase {
@@ -138,7 +139,7 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
     on<CallHmsReconnecting>((_, emit) => emit(state.copyWith(phase: CallPhase.joining)));
     on<CallHmsReconnected>((_, emit) => emit(state.copyWith(phase: CallPhase.inCall)));
     on<CallHmsFailed>((e, emit) {
-      AppLogger.log(LogTag.rtc, 'HMS error: ${e.message} terminal=${e.isTerminal}');
+      AppLogger.w(LogTag.rtc, 'HMS error: ${e.message} terminal=${e.isTerminal}');
       if (e.isTerminal) {
         emit(state.copyWith(phase: CallPhase.failed, errorMessage: e.message));
       }
@@ -150,14 +151,15 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
     try {
       final data = await _api.get('/hms-token?roomId=${e.roomId}&role=${e.role}');
       final token = data['token'] as String;
-      AppLogger.log(LogTag.rtc, 'token ok, joining roomId=${e.roomId}');
+      AppLogger.i(LogTag.rtc,
+          'hms token received: ${LogMask.token(token)}; joining roomId=${e.roomId} uid=${LogMask.uid(e.userId)}');
 
       _sdk = _sdkFactory();
       await _sdk!.build();
       _sdk!.addUpdateListener(listener: this);
       await _sdk!.join(config: HMSConfig(authToken: token, userName: e.userName));
     } catch (err) {
-      AppLogger.log(LogTag.rtc, 'join failed: $err');
+      AppLogger.e(LogTag.rtc, 'join failed: $err');
       emit(state.copyWith(phase: CallPhase.failed, errorMessage: err.toString()));
     }
   }
@@ -165,13 +167,13 @@ class CallBloc extends Bloc<CallEvent, CallState> implements HMSUpdateListener {
   Future<void> _onEnd(CallEndRequested _, Emitter<CallState> emit) async {
     await _sdk?.leave();
     emit(state.copyWith(phase: CallPhase.ended));
-    AppLogger.log(LogTag.rtc, 'call ended');
+    AppLogger.i(LogTag.rtc, 'call ended');
   }
 
   // ─── HMSUpdateListener ───
   @override
   void onJoin({required HMSRoom room}) {
-    AppLogger.log(LogTag.rtc, 'joined roomId=${room.id}');
+    AppLogger.i(LogTag.rtc, 'joined roomId=${room.id}');
     add(const CallHmsConnected());
   }
 

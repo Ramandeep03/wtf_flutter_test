@@ -38,7 +38,7 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ error: 'User profile not found' });
     }
 
-    console.log(`[AUTH] login uid=${uid}`);
+    console.log(`[AUTH] login uid=${uid.slice(0, 3)}***${uid.slice(-3)}`);
     return res.json({ idToken, refreshToken, user: { uid, ...userDoc.data() } });
   } catch (e) {
     return res.status(500).json({ error: e.message });

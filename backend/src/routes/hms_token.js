@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
   const { roomId, role } = req.query;
   if (!roomId || !role) return res.status(400).json({ error: 'roomId and role required' });
   const token = appToken(req.uid, role, roomId);
-  console.log(`[RTC] hms token issued uid=${req.uid} role=${role}`);
+  console.log(`[RTC] hms token issued uid=${req.uid.slice(0, 3)}***${req.uid.slice(-3)} role=${role}`);
   res.json({ token });
 });
 
