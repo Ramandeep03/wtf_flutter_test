@@ -158,4 +158,22 @@ Every commit tagged `[AI]` MUST have a corresponding entry below.
   - `POST /rooms` returns 500 against placeholder HMS_* creds; trainer approve will currently snackbar "Could not create call room: …". Will green once real 100ms creds land.
   - `sendSystemMessage` will throw against placeholder STREAM_* creds; caught, logged, PATCH still succeeds.
   - Local notification to DK after trainer approves is P14 scope.
-- **Commit:** `feat(scheduler): SchedulerCubit + RequestsBloc + backend calls [AI]`
+- **Commit:** `232981d` — `feat(scheduler): SchedulerCubit + RequestsBloc + backend calls [AI]`
+
+### #13 — Flutter pre-join + permissions
+- **Tool:** Claude Opus 4.7
+- **Intent:** P12 — `PreJoinCubit` fetches `/rooms?callRequestId=…`; `PreJoinView` (shared) shows camera placeholder + mic/cam toggles + role label + Join button; per-app `PreJoinPage` provides MultiBlocProvider. Stub `CallBloc` so PreJoinView's Join-Call wiring compiles before P13. Shared `requestCallAndNavigate(ctx, …)` helper requests mic+camera permissions then `ctx.push('/pre-join?…')`. Wired into both apps' request lists.
+- **Prompt (≤2 lines):** "P12 — Pre-Join Screen + Permissions. PreJoinCubit + PreJoinPage + permission gate. AndroidManifest entries (deferred — apps have no android/ folder)."
+- **Used:** yes
+- **Deviations from brief:**
+  1. `PreJoinState`: `ApiStatus<String>` carries the fetched `hmsRoomId` directly. Brief's flat `status + hmsRoomId + errorMessage` collapses into the sealed type per ADR#5.
+  2. `CallBloc` is a real stub in shared — `CallJoinRequested` emits `ApiLoading` → `ApiSuccess(unit)` so the router redirect to `/call` works pre-P13. Will be replaced with 100ms SDK plumbing.
+  3. PreJoinView and the permission helper live in shared; per-app `PreJoinPage` is a 12-line wrapper. Brief had a single per-app PreJoinPage.
+  4. Router param renamed from `roomId` to `callRequestId` to match what the page actually needs (the request id, not the 100ms room id — the room id is fetched server-side from the request).
+  5. Permission helper is a top-level function (`requestCallAndNavigate`) rather than a method on a request list; same effect with less boilerplate at call sites.
+  6. `_DeviceToggle` colors flip for light/dark theme.
+- **NOT done:**
+  - **AndroidManifest + build.gradle**: Both Flutter apps are still Dart-only (no `android/` or `ios/` folders). Brief asks for permission entries + `minSdk 21` / `targetSdk 34`. To do this I'd need to run `flutter create --platforms=android,ios .` in each app, which generates ~50 platform files (kotlin MainActivity, gradle wrappers, ios Runner, default package id `com.example.guru_app`). Asked the user; awaiting their choice on package id before materializing.
+- **Verified:** `flutter analyze` clean shared + guru + trainer. `flutter test` shared 12/12 + guru 3/3 still passing.
+- **Runtime gap:** `GET /rooms` is currently a 404 unless a trainer has approved a request and successfully created a 100ms room — which itself needs real HMS_* creds.
+- **Commit:** `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`

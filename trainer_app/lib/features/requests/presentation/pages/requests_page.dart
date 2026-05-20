@@ -179,6 +179,20 @@ class _RequestTile extends StatelessWidget {
                     ),
                   ],
                 ),
+            ] else if (request.isApproved && canJoinCall(request)) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  onPressed: () => requestCallAndNavigate(
+                    context,
+                    callRequestId: request.id,
+                    role: 'trainer',
+                  ),
+                  icon: const Icon(Icons.videocam),
+                  label: const Text('Join Call'),
+                ),
+              ),
             ] else if (request.isDeclined && request.declineReason != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(

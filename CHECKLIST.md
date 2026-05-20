@@ -143,4 +143,21 @@
   - Local notification to DK on approve = P14 work.
 - [x] `feat(scheduler): SchedulerCubit + RequestsBloc + backend calls [AI]`
 
-## P12–P17 — TBD (filled in as briefs arrive)
+## P12 — Flutter: Pre-Join Screen + Permissions
+- [x] `PreJoinCubit` fetches `GET /rooms?callRequestId=…` and emits `ApiSuccess<String>(hmsRoomId)`
+- [x] "Ready to join? Check mic and camera." rendered on `ApiSuccess`
+- [x] Mic / Camera toggles flip icon + active border (light + dark theme aware)
+- [x] Join button disabled while room is loading and while `CallBloc` is in `ApiLoading`
+- [x] `CallBloc` stub emits `ApiSuccess` so router can advance; full 100ms wiring is P13
+- [x] `requestCallAndNavigate(ctx, …)` shared helper requests mic+cam, navigates `/pre-join?callRequestId=…&role=…`
+- [x] Guru `MyRequestsPage` Join Call → permission-gated nav
+- [x] Trainer `RequestsPage` All-tab approved row → Join Call (permission-gated, role='trainer')
+- [x] Both apps' router `/pre-join` reads `callRequestId` query param (renamed from `roomId`)
+- [x] Cancel pops back via `context.pop()`
+- [x] `flutter analyze` shared + guru + trainer → No issues
+- [x] `flutter test` shared 12/12 ; guru 3/3
+- [ ] **Platform gap** — neither app has `android/` or `ios/` folders yet (P01 scaffolded as Dart-only). AndroidManifest permission entries + `minSdk 21` / `targetSdk 34` can't be added until `flutter create --platforms=android,ios .` is run in each app. Documented; awaiting user choice on package id.
+- [ ] **Runtime gap** — `GET /rooms` returns 404 unless a `room_meta` doc has been created via trainer-approve (which itself needs real 100ms creds). End-to-end pre-join can't be validated until those creds drop.
+- [x] `feat(call): PreJoinCubit + pre-join screen + permissions [AI]`
+
+## P13–P17 — TBD (filled in as briefs arrive)

@@ -115,10 +115,11 @@ class _RequestTile extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Wired to PreJoin in P12.
-                    SnackbarHelper.showInfo(context, 'Pre-join lands in P12.');
-                  },
+                  onPressed: () => requestCallAndNavigate(
+                    context,
+                    callRequestId: request.id,
+                    role: 'member',
+                  ),
                   icon: const Icon(Icons.videocam),
                   label: const Text('Join Call'),
                 ),
