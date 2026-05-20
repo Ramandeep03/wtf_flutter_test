@@ -23,13 +23,48 @@ guru_app/     Flutter app (end users)
 trainer_app/  Flutter app (trainers)
 ```
 
-## Run
+## First-time setup
+
+### 1. Firebase project
+1. [Firebase Console](https://console.firebase.google.com/) → **Add project** → name `wtf-fitness`.
+2. **Build → Firestore Database** → *Create database* → **Native mode**, region `us-central1`.
+3. **Build → Authentication** → *Get started* → enable **Email/Password**.
+4. **⚙ Project settings → Service accounts** → *Generate new private key* → save the JSON as `backend/serviceAccountKey.json` (gitignored).
+
+### 2. Backend
+```bash
+cd backend
+cp .env.example .env          # fill in real values
+npm install
+node seed.js                  # ONCE only — creates Aarav (trainer) + DK (member); save the printed UIDs
+npm run dev                   # http://localhost:3000
+curl http://localhost:3000/health
+# → {"status":"ok","ts":"..."}
+```
+
+### 3. Deploy Firestore rules (deny-all, all access via Admin SDK)
+```bash
+npm i -g firebase-tools       # one-time
+firebase login
+firebase use --add            # pick the wtf-fitness project
+firebase deploy --only firestore:rules
+```
+
+### 4. Seed credentials (after step 2)
+| User  | Role    | Email           | Password   |
+|-------|---------|-----------------|------------|
+| Aarav | trainer | aarav@wtf.fit   | `Wtf@1234` |
+| DK    | member  | dk@wtf.fit      | `Wtf@1234` |
+
+DK's `assignedTrainerId` is set to Aarav's UID. UIDs are also written locally to `backend/.seed-uids.local` (gitignored).
+
+> **Note:** `seed.js` is non-idempotent — re-running fails with `auth/email-already-exists`. If you need to re-seed, delete the users in Firebase Console → Authentication first.
+
+## Run (after first-time setup)
 
 ### Backend
 ```bash
 cd backend
-cp .env.example .env          # fill in real values + drop serviceAccountKey.json
-npm install
 npm run dev                   # http://localhost:3000
 ```
 
